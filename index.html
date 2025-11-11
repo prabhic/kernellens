@@ -3,8 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kernel Lens - Visualizing Kernel Execution</title>
+    <title>Kernel Lens - Interactive Kernel Execution Visualizer</title>
     <style>
+        :root {
+            --primary: #667eea;
+            --secondary: #764ba2;
+            --user-space: #f093fb;
+            --kernel-space: #4facfe;
+            --vfs: #43e97b;
+            --fs: #fa709a;
+            --block: #fee140;
+            --device: #30cfd0;
+            --bg: #0f0f23;
+            --text: #cccccc;
+            --text-bright: #ffffff;
+            --border: #333344;
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -12,396 +27,369 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 20px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            overflow-x: hidden;
         }
 
         .container {
-            max-width: 1400px;
+            max-width: 1600px;
             margin: 0 auto;
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            overflow: hidden;
+            padding: 20px;
         }
 
+        /* Header */
         header {
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
-            color: white;
-            padding: 30px;
             text-align: center;
+            padding: 40px 20px 20px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            border-radius: 12px;
+            margin-bottom: 30px;
         }
 
         header h1 {
             font-size: 2.5em;
+            color: white;
             margin-bottom: 10px;
+            font-weight: 700;
         }
 
         header p {
+            color: rgba(255,255,255,0.9);
             font-size: 1.1em;
-            opacity: 0.9;
         }
 
-        .controls {
-            background: #f8f9fa;
-            padding: 20px 30px;
-            border-bottom: 2px solid #e9ecef;
+        /* Input Control */
+        .input-section {
+            background: #1a1a2e;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 20px;
             display: flex;
             gap: 20px;
             align-items: center;
             flex-wrap: wrap;
         }
 
-        .control-group {
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-        }
-
-        .control-group label {
+        .input-section label {
             font-weight: 600;
-            font-size: 0.9em;
-            color: #495057;
+            color: var(--text-bright);
+            font-size: 1.1em;
         }
 
-        select, button {
-            padding: 10px 15px;
-            border: 2px solid #dee2e6;
+        .syscall-input {
+            flex: 1;
+            min-width: 300px;
+            display: flex;
+            gap: 10px;
+        }
+
+        select, input[type="text"], input[type="number"] {
+            padding: 12px 16px;
+            border: 2px solid var(--border);
             border-radius: 8px;
+            background: var(--bg);
+            color: var(--text-bright);
             font-size: 1em;
-            background: white;
-            cursor: pointer;
-            transition: all 0.3s;
+            font-family: 'Courier New', monospace;
         }
 
-        button {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+        select {
+            min-width: 200px;
+        }
+
+        input[type="text"] {
+            flex: 1;
+        }
+
+        input[type="number"] {
+            width: 120px;
+        }
+
+        button.execute-btn {
+            padding: 12px 30px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
             border: none;
-            font-weight: 600;
-        }
-
-        button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
-        }
-
-        button:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .main-content {
-            padding: 30px;
-        }
-
-        .info-panel {
-            background: #e7f3ff;
-            border-left: 4px solid #0066cc;
-            padding: 15px;
-            margin-bottom: 20px;
             border-radius: 8px;
+            color: white;
+            font-weight: 700;
+            font-size: 1em;
+            cursor: pointer;
+            transition: transform 0.2s;
         }
 
-        .info-panel h3 {
-            color: #0066cc;
-            margin-bottom: 5px;
+        button.execute-btn:hover {
+            transform: translateY(-2px);
         }
 
-        .visualization {
-            position: relative;
-            min-height: 600px;
-            background: #fafbfc;
-            border-radius: 12px;
-            padding: 30px;
-            overflow-x: auto;
-        }
-
-        /* Flow Stages */
-        .flow-container {
-            display: flex;
-            flex-direction: column;
-            gap: 40px;
+        /* Main Visualization Area */
+        .viz-container {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 0;
             position: relative;
         }
 
-        .stage {
-            background: white;
+        /* Layer Styles */
+        .layer {
+            background: #1a1a2e;
+            border: 2px solid var(--border);
             border-radius: 12px;
             padding: 20px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
             position: relative;
+            margin-bottom: 15px;
             transition: all 0.3s;
         }
 
-        .stage:hover {
-            box-shadow: 0 4px 16px rgba(102, 126, 234, 0.3);
-            transform: translateX(5px);
+        .layer.active {
+            border-color: currentColor;
+            box-shadow: 0 0 20px currentColor;
         }
 
-        .stage-header {
+        .layer-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 15px;
-            cursor: pointer;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border);
         }
 
-        .stage-title {
-            font-size: 1.3em;
+        .layer-title {
+            font-size: 1.4em;
             font-weight: 700;
-            color: #2c3e50;
             display: flex;
             align-items: center;
             gap: 10px;
         }
 
-        .stage-number {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            width: 35px;
-            height: 35px;
-            border-radius: 50%;
+        .layer-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.7em;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .layer-content {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+        }
+
+        .operations {
             display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 700;
+            flex-direction: column;
+            gap: 10px;
         }
 
-        .expand-icon {
-            font-size: 1.2em;
-            color: #6c757d;
-            transition: transform 0.3s;
-        }
-
-        .expand-icon.expanded {
-            transform: rotate(180deg);
-        }
-
-        .stage-content {
-            max-height: 0;
+        .operation {
+            background: rgba(255,255,255,0.05);
+            border-left: 3px solid currentColor;
+            padding: 12px 15px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            position: relative;
             overflow: hidden;
-            transition: max-height 0.3s ease;
         }
 
-        .stage-content.expanded {
-            max-height: 2000px;
+        .operation.active {
+            background: rgba(255,255,255,0.1);
+            animation: glow 1s ease-in-out infinite;
         }
 
-        .stage-description {
-            color: #6c757d;
-            margin-bottom: 15px;
-            line-height: 1.6;
+        @keyframes glow {
+            0%, 100% { box-shadow: 0 0 5px currentColor; }
+            50% { box-shadow: 0 0 15px currentColor; }
         }
 
-        /* Data Flow Visualization */
-        .data-flow {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            margin: 15px 0;
-            padding: 15px;
-            background: #f8f9fa;
-            border-radius: 8px;
-            position: relative;
-        }
-
-        .flow-box {
-            background: white;
-            border: 2px solid #dee2e6;
-            border-radius: 8px;
-            padding: 15px;
-            min-width: 150px;
-            text-align: center;
-            transition: all 0.3s;
-            position: relative;
-        }
-
-        .flow-box:hover {
-            border-color: #667eea;
-            transform: scale(1.05);
-        }
-
-        .flow-box.active {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border-color: #667eea;
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-        }
-
-        .flow-arrow {
-            font-size: 1.5em;
-            color: #667eea;
-            font-weight: 700;
-            animation: slide 1.5s infinite;
-        }
-
-        @keyframes slide {
-            0%, 100% { transform: translateX(0); opacity: 0.5; }
-            50% { transform: translateX(5px); opacity: 1; }
-        }
-
-        .flow-label {
+        .operation-label {
+            color: var(--text);
             font-size: 0.85em;
-            color: #6c757d;
-            margin-bottom: 5px;
+            margin-bottom: 4px;
+        }
+
+        .operation-value {
+            color: var(--text-bright);
             font-weight: 600;
         }
 
-        .flow-value {
-            font-size: 1.1em;
-            font-weight: 700;
-            color: #2c3e50;
+        .metrics {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
         }
 
-        .flow-box.active .flow-label,
-        .flow-box.active .flow-value {
-            color: white;
-        }
-
-        /* Metrics and Details */
-        .metrics-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin-top: 15px;
-        }
-
-        .metric-card {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            color: white;
-            padding: 15px;
-            border-radius: 8px;
+        .metric {
+            background: rgba(255,255,255,0.05);
+            padding: 10px;
+            border-radius: 6px;
             text-align: center;
-        }
-
-        .metric-card.kernel-mode {
-            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-        }
-
-        .metric-card.memory {
-            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
-        }
-
-        .metric-card.cpu {
-            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
-        }
-
-        .metric-label {
-            font-size: 0.9em;
-            opacity: 0.9;
-            margin-bottom: 5px;
         }
 
         .metric-value {
             font-size: 1.8em;
             font-weight: 700;
+            color: var(--text-bright);
+            font-family: 'Courier New', monospace;
         }
 
-        /* Code Block */
-        .code-block {
-            background: #282c34;
-            color: #abb2bf;
-            padding: 15px;
+        .metric-label {
+            font-size: 0.85em;
+            color: var(--text);
+            margin-top: 4px;
+        }
+
+        /* Flow Connectors */
+        .flow-connector {
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            margin: -10px 0;
+        }
+
+        .flow-line {
+            width: 4px;
+            height: 100%;
+            background: linear-gradient(180deg, transparent, currentColor, transparent);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .flow-particle {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: currentColor;
+            border-radius: 50%;
+            left: 50%;
+            transform: translateX(-50%);
+            animation: flow-down 1.5s linear infinite;
+            opacity: 0;
+            box-shadow: 0 0 10px currentColor;
+        }
+
+        @keyframes flow-down {
+            0% { top: 0%; opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { top: 100%; opacity: 0; }
+        }
+
+        .flow-connector.active .flow-particle {
+            opacity: 1;
+        }
+
+        /* Data Packet Visualization */
+        .data-packet {
+            background: rgba(255,255,255,0.1);
+            border: 2px dashed currentColor;
             border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
             font-family: 'Courier New', monospace;
             font-size: 0.9em;
+        }
+
+        .packet-header {
+            font-weight: 700;
+            color: var(--text-bright);
+            margin-bottom: 8px;
+            font-size: 0.95em;
+        }
+
+        .packet-fields {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 8px 15px;
+            font-size: 0.85em;
+        }
+
+        .packet-field-name {
+            color: var(--text);
+        }
+
+        .packet-field-value {
+            color: var(--text-bright);
+            font-weight: 600;
+        }
+
+        /* Color coding for layers */
+        .layer.user-space {
+            color: var(--user-space);
+        }
+
+        .layer.syscall-interface {
+            color: var(--kernel-space);
+        }
+
+        .layer.vfs {
+            color: var(--vfs);
+        }
+
+        .layer.filesystem {
+            color: var(--fs);
+        }
+
+        .layer.block {
+            color: var(--block);
+        }
+
+        .layer.device {
+            color: var(--device);
+        }
+
+        /* Info Panel */
+        .info-panel {
+            background: #1a1a2e;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .info-panel h3 {
+            color: var(--text-bright);
+            margin-bottom: 10px;
+        }
+
+        .info-panel p {
+            line-height: 1.6;
+        }
+
+        /* Code Display */
+        .code-snippet {
+            background: #0d0d1e;
+            border-radius: 6px;
+            padding: 12px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85em;
+            margin-top: 10px;
             overflow-x: auto;
-            margin: 10px 0;
         }
 
-        .code-block .keyword {
-            color: #c678dd;
-        }
-
-        .code-block .function {
-            color: #61afef;
-        }
-
-        .code-block .string {
-            color: #98c379;
-        }
-
-        .code-block .comment {
-            color: #5c6370;
-            font-style: italic;
-        }
-
-        /* Connection Lines */
-        .connection-line {
-            position: absolute;
-            width: 2px;
-            background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: -1;
-        }
-
-        /* Animation States */
-        .stage.executing {
-            border: 2px solid #667eea;
-            background: linear-gradient(to right, #f8f9ff 0%, white 100%);
-        }
-
-        .stage.completed {
-            opacity: 0.7;
-        }
-
-        /* Timeline */
-        .timeline {
-            display: flex;
-            gap: 10px;
-            margin: 20px 0;
-            padding: 15px;
-            background: white;
-            border-radius: 8px;
-            align-items: center;
-        }
-
-        .timeline-step {
-            flex: 1;
-            height: 8px;
-            background: #e9ecef;
-            border-radius: 4px;
-            position: relative;
-            transition: all 0.3s;
-        }
-
-        .timeline-step.active {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        }
-
-        .timeline-step.completed {
-            background: #28a745;
-        }
-
-        .timeline-label {
-            position: absolute;
-            bottom: -25px;
-            left: 50%;
-            transform: translateX(-50%);
-            font-size: 0.8em;
-            color: #6c757d;
-            white-space: nowrap;
-        }
+        .code-snippet .keyword { color: #c678dd; }
+        .code-snippet .function { color: #61afef; }
+        .code-snippet .string { color: #98c379; }
+        .code-snippet .comment { color: #5c6370; font-style: italic; }
+        .code-snippet .type { color: #e5c07b; }
 
         /* Legend */
         .legend {
             display: flex;
             gap: 20px;
-            margin: 20px 0;
-            padding: 15px;
-            background: white;
-            border-radius: 8px;
             flex-wrap: wrap;
+            background: #1a1a2e;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            padding: 15px 20px;
+            margin-bottom: 20px;
         }
 
         .legend-item {
@@ -411,25 +399,26 @@
         }
 
         .legend-color {
-            width: 20px;
-            height: 20px;
-            border-radius: 4px;
-        }
-
-        .legend-label {
-            font-size: 0.9em;
-            color: #495057;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
         }
 
         /* Responsive */
-        @media (max-width: 768px) {
-            .data-flow {
-                flex-direction: column;
+        @media (max-width: 1024px) {
+            .layer-content {
+                grid-template-columns: 1fr;
             }
+        }
 
-            .controls {
+        @media (max-width: 768px) {
+            .input-section {
                 flex-direction: column;
                 align-items: stretch;
+            }
+
+            .syscall-input {
+                flex-direction: column;
             }
         }
     </style>
@@ -438,439 +427,511 @@
     <div class="container">
         <header>
             <h1>🔍 Kernel Lens</h1>
-            <p>Interactive Visualization of Kernel Internal Execution</p>
+            <p>Interactive Kernel Execution Visualizer - Watch syscalls flow through the kernel in real-time</p>
         </header>
 
-        <div class="controls">
-            <div class="control-group">
-                <label>Select System Call</label>
-                <select id="syscall-select">
-                    <option value="read">read() - File Read Operation</option>
-                    <option value="write">write() - File Write Operation</option>
-                    <option value="open">open() - File Open Operation</option>
-                    <option value="fork">fork() - Process Creation</option>
-                </select>
-            </div>
-            <button id="start-btn">▶ Start Visualization</button>
-            <button id="step-btn">⏭ Step Through</button>
-            <button id="reset-btn">↻ Reset</button>
+        <div class="info-panel">
+            <h3>How to use:</h3>
+            <p>Select a system call, configure its parameters, and click Execute. Watch as your request flows through every layer of the kernel stack - all visible simultaneously. Hover over operations for details.</p>
         </div>
 
-        <div class="main-content">
-            <div class="info-panel">
-                <h3>Sequence: read() System Call Execution</h3>
-                <p>Follow the journey of a read() system call from user space through kernel space and back. Click on each stage to expand and explore the internal operations.</p>
+        <div class="input-section">
+            <label>System Call:</label>
+            <div class="syscall-input">
+                <select id="syscall-select">
+                    <option value="read">read(fd, buf, count)</option>
+                    <option value="write">write(fd, buf, count)</option>
+                    <option value="open">open(pathname, flags)</option>
+                    <option value="close">close(fd)</option>
+                </select>
+                <input type="number" id="fd-input" placeholder="fd" value="3">
+                <input type="number" id="size-input" placeholder="size" value="4096">
+            </div>
+            <button class="execute-btn" onclick="executeSystemCall()">⚡ Execute</button>
+        </div>
+
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-color" style="background: var(--user-space);"></div>
+                <span>User Space</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: var(--kernel-space);"></div>
+                <span>Syscall Interface</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: var(--vfs);"></div>
+                <span>VFS Layer</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: var(--fs);"></div>
+                <span>Filesystem</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: var(--block);"></div>
+                <span>Block Layer</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: var(--device);"></div>
+                <span>Device Driver</span>
+            </div>
+        </div>
+
+        <div class="viz-container">
+            <!-- USER SPACE LAYER -->
+            <div class="layer user-space" id="layer-user">
+                <div class="layer-header">
+                    <div class="layer-title">
+                        <span>User Space</span>
+                        <span class="layer-badge" style="background: var(--user-space); color: white;">Ring 3</span>
+                    </div>
+                    <span style="font-family: monospace; font-size: 0.9em;">PID: 1234</span>
+                </div>
+                <div class="layer-content">
+                    <div class="operations">
+                        <div class="operation">
+                            <div class="operation-label">Application Code</div>
+                            <div class="code-snippet">
+<span class="type">char</span> buffer[<span class="string">4096</span>];
+<span class="type">int</span> fd = <span class="function">open</span>(<span class="string">"/etc/passwd"</span>, O_RDONLY);
+<span class="type">ssize_t</span> n = <span class="function">read</span>(fd, buffer, <span class="keyword">sizeof</span>(buffer));
+                            </div>
+                        </div>
+                        <div class="data-packet">
+                            <div class="packet-header">📦 Request Parameters</div>
+                            <div class="packet-fields">
+                                <span class="packet-field-name">fd:</span>
+                                <span class="packet-field-value" id="param-fd">3</span>
+                                <span class="packet-field-name">*buf:</span>
+                                <span class="packet-field-value">0x7ffc1234abcd</span>
+                                <span class="packet-field-name">count:</span>
+                                <span class="packet-field-value" id="param-count">4096</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="metrics">
+                        <div class="metric">
+                            <div class="metric-value">User</div>
+                            <div class="metric-label">CPU Mode</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-value">0μs</div>
+                            <div class="metric-label">Elapsed</div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            <div class="legend">
-                <div class="legend-item">
-                    <div class="legend-color" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);"></div>
-                    <span class="legend-label">Currently Executing</span>
-                </div>
-                <div class="legend-item">
-                    <div class="legend-color" style="background: #28a745;"></div>
-                    <span class="legend-label">Completed</span>
-                </div>
-                <div class="legend-item">
-                    <div class="legend-color" style="background: #e9ecef;"></div>
-                    <span class="legend-label">Pending</span>
+            <!-- FLOW CONNECTOR -->
+            <div class="flow-connector user-space" id="flow-1">
+                <div class="flow-line">
+                    <div class="flow-particle"></div>
+                    <div class="flow-particle" style="animation-delay: 0.5s;"></div>
                 </div>
             </div>
 
-            <div class="timeline" id="timeline">
-                <div class="timeline-step" data-stage="0">
-                    <span class="timeline-label">User Space</span>
+            <!-- SYSCALL INTERFACE LAYER -->
+            <div class="layer syscall-interface" id="layer-syscall">
+                <div class="layer-header">
+                    <div class="layer-title">
+                        <span>System Call Interface</span>
+                        <span class="layer-badge" style="background: var(--kernel-space); color: white;">Ring 0</span>
+                    </div>
+                    <span style="font-family: monospace; font-size: 0.9em;">SYSCALL #0</span>
                 </div>
-                <div class="timeline-step" data-stage="1">
-                    <span class="timeline-label">System Call</span>
-                </div>
-                <div class="timeline-step" data-stage="2">
-                    <span class="timeline-label">VFS Layer</span>
-                </div>
-                <div class="timeline-step" data-stage="3">
-                    <span class="timeline-label">File System</span>
-                </div>
-                <div class="timeline-step" data-stage="4">
-                    <span class="timeline-label">Block Layer</span>
-                </div>
-                <div class="timeline-step" data-stage="5">
-                    <span class="timeline-label">Return</span>
+                <div class="layer-content">
+                    <div class="operations">
+                        <div class="operation">
+                            <div class="operation-label">Context Switch</div>
+                            <div class="operation-value">User Mode → Kernel Mode (SYSCALL instruction)</div>
+                        </div>
+                        <div class="operation">
+                            <div class="operation-label">Register Mapping</div>
+                            <div class="operation-value">rax=0 (SYS_read), rdi=fd, rsi=buf, rdx=count</div>
+                        </div>
+                        <div class="operation">
+                            <div class="operation-label">Entry Point</div>
+                            <div class="code-snippet">
+<span class="function">SYSCALL_DEFINE3</span>(read, <span class="type">unsigned int</span>, fd,
+    <span class="type">char __user *</span>, buf, <span class="type">size_t</span>, count) {
+    <span class="keyword">return</span> <span class="function">ksys_read</span>(fd, buf, count);
+}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="metrics">
+                        <div class="metric">
+                            <div class="metric-value">Kernel</div>
+                            <div class="metric-label">CPU Mode</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-value">~1μs</div>
+                            <div class="metric-label">Context Switch</div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <div class="visualization">
-                <div class="flow-container" id="flow-container">
-                    <!-- Stages will be dynamically populated -->
+            <!-- FLOW CONNECTOR -->
+            <div class="flow-connector syscall-interface" id="flow-2">
+                <div class="flow-line">
+                    <div class="flow-particle"></div>
+                    <div class="flow-particle" style="animation-delay: 0.5s;"></div>
+                </div>
+            </div>
+
+            <!-- VFS LAYER -->
+            <div class="layer vfs" id="layer-vfs">
+                <div class="layer-header">
+                    <div class="layer-title">
+                        <span>Virtual File System (VFS)</span>
+                    </div>
+                    <span style="font-family: monospace; font-size: 0.9em;">vfs_read()</span>
+                </div>
+                <div class="layer-content">
+                    <div class="operations">
+                        <div class="operation">
+                            <div class="operation-label">FD → File Mapping</div>
+                            <div class="operation-value">fdget_pos(fd=3) → struct file *f</div>
+                        </div>
+                        <div class="operation">
+                            <div class="operation-label">File Structure</div>
+                            <div class="operation-value">f_op = ext4_file_operations, f_inode = 0x2a5b91</div>
+                        </div>
+                        <div class="operation">
+                            <div class="operation-label">Permission Check</div>
+                            <div class="operation-value">file_permission(f, MAY_READ) → OK</div>
+                        </div>
+                        <div class="data-packet">
+                            <div class="packet-header">📋 File Descriptor Table</div>
+                            <div class="packet-fields">
+                                <span class="packet-field-name">fd 3:</span>
+                                <span class="packet-field-value">/etc/passwd</span>
+                                <span class="packet-field-name">inode:</span>
+                                <span class="packet-field-value">524288</span>
+                                <span class="packet-field-name">pos:</span>
+                                <span class="packet-field-value">0</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="metrics">
+                        <div class="metric">
+                            <div class="metric-value">Hit</div>
+                            <div class="metric-label">Dentry Cache</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-value">~0.5μs</div>
+                            <div class="metric-label">Lookup Time</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- FLOW CONNECTOR -->
+            <div class="flow-connector vfs" id="flow-3">
+                <div class="flow-line">
+                    <div class="flow-particle"></div>
+                    <div class="flow-particle" style="animation-delay: 0.5s;"></div>
+                </div>
+            </div>
+
+            <!-- FILESYSTEM LAYER -->
+            <div class="layer filesystem" id="layer-fs">
+                <div class="layer-header">
+                    <div class="layer-title">
+                        <span>File System (ext4)</span>
+                    </div>
+                    <span style="font-family: monospace; font-size: 0.9em;">ext4_file_read_iter()</span>
+                </div>
+                <div class="layer-content">
+                    <div class="operations">
+                        <div class="operation">
+                            <div class="operation-label">Inode Lookup</div>
+                            <div class="operation-value">Load inode 524288, size=2.1KB, blocks=8</div>
+                        </div>
+                        <div class="operation">
+                            <div class="operation-label">Block Mapping</div>
+                            <div class="operation-value">Logical block 0 → Physical block 12345678</div>
+                        </div>
+                        <div class="operation">
+                            <div class="operation-label">Page Cache Check</div>
+                            <div class="operation-value">find_get_page() → Cache HIT (85% hit rate)</div>
+                        </div>
+                        <div class="data-packet">
+                            <div class="packet-header">🗄️ Extent Tree</div>
+                            <div class="packet-fields">
+                                <span class="packet-field-name">logical:</span>
+                                <span class="packet-field-value">0-7</span>
+                                <span class="packet-field-name">physical:</span>
+                                <span class="packet-field-value">12345678-12345685</span>
+                                <span class="packet-field-name">length:</span>
+                                <span class="packet-field-value">8 blocks (32KB)</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="metrics">
+                        <div class="metric">
+                            <div class="metric-value">4KB</div>
+                            <div class="metric-label">Block Size</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-value">85%</div>
+                            <div class="metric-label">Cache Hit</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- FLOW CONNECTOR -->
+            <div class="flow-connector filesystem" id="flow-4">
+                <div class="flow-line">
+                    <div class="flow-particle"></div>
+                    <div class="flow-particle" style="animation-delay: 0.5s;"></div>
+                </div>
+            </div>
+
+            <!-- BLOCK LAYER -->
+            <div class="layer block" id="layer-block">
+                <div class="layer-header">
+                    <div class="layer-title">
+                        <span>Block I/O Layer</span>
+                    </div>
+                    <span style="font-family: monospace; font-size: 0.9em;">submit_bio()</span>
+                </div>
+                <div class="layer-content">
+                    <div class="operations">
+                        <div class="operation">
+                            <div class="operation-label">BIO Creation</div>
+                            <div class="operation-value">bio_alloc(sector=98765424, size=4096)</div>
+                        </div>
+                        <div class="operation">
+                            <div class="operation-label">I/O Scheduler</div>
+                            <div class="operation-value">mq-deadline: merge/sort queue (depth=32)</div>
+                        </div>
+                        <div class="operation">
+                            <div class="operation-label">Request Dispatch</div>
+                            <div class="operation-value">blk_mq_run_hw_queue() → SCSI layer</div>
+                        </div>
+                        <div class="data-packet">
+                            <div class="packet-header">💾 Block Request</div>
+                            <div class="packet-fields">
+                                <span class="packet-field-name">sector:</span>
+                                <span class="packet-field-value">98765424</span>
+                                <span class="packet-field-name">nr_sectors:</span>
+                                <span class="packet-field-value">8</span>
+                                <span class="packet-field-name">queue:</span>
+                                <span class="packet-field-value">depth 12/32</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="metrics">
+                        <div class="metric">
+                            <div class="metric-value">32</div>
+                            <div class="metric-label">Queue Depth</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-value">~10μs</div>
+                            <div class="metric-label">Queue Time</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- FLOW CONNECTOR -->
+            <div class="flow-connector block" id="flow-5">
+                <div class="flow-line">
+                    <div class="flow-particle"></div>
+                    <div class="flow-particle" style="animation-delay: 0.5s;"></div>
+                </div>
+            </div>
+
+            <!-- DEVICE LAYER -->
+            <div class="layer device" id="layer-device">
+                <div class="layer-header">
+                    <div class="layer-title">
+                        <span>Device Driver</span>
+                    </div>
+                    <span style="font-family: monospace; font-size: 0.9em;">/dev/sda</span>
+                </div>
+                <div class="layer-content">
+                    <div class="operations">
+                        <div class="operation">
+                            <div class="operation-label">SCSI Command</div>
+                            <div class="operation-value">READ_10: LBA=98765424, transfer_len=4096</div>
+                        </div>
+                        <div class="operation">
+                            <div class="operation-label">DMA Transfer</div>
+                            <div class="operation-value">Setup DMA: device → memory (0x1234abcd0000)</div>
+                        </div>
+                        <div class="operation">
+                            <div class="operation-label">IRQ Handler</div>
+                            <div class="operation-value">scsi_done() → IRQ 45 → complete request</div>
+                        </div>
+                        <div class="data-packet">
+                            <div class="packet-header">🔌 Hardware I/O</div>
+                            <div class="packet-fields">
+                                <span class="packet-field-name">device:</span>
+                                <span class="packet-field-value">SATA SSD</span>
+                                <span class="packet-field-name">latency:</span>
+                                <span class="packet-field-value">~150μs</span>
+                                <span class="packet-field-name">status:</span>
+                                <span class="packet-field-value">✓ Success</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="metrics">
+                        <div class="metric">
+                            <div class="metric-value">150μs</div>
+                            <div class="metric-label">Device Latency</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-value">4096B</div>
+                            <div class="metric-label">Transferred</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- FLOW CONNECTOR (RETURN) -->
+            <div class="flow-connector device" id="flow-6">
+                <div class="flow-line">
+                    <div class="flow-particle"></div>
+                    <div class="flow-particle" style="animation-delay: 0.5s;"></div>
+                </div>
+            </div>
+
+            <!-- RETURN TO USER -->
+            <div class="layer user-space" id="layer-return">
+                <div class="layer-header">
+                    <div class="layer-title">
+                        <span>Return to User Space</span>
+                        <span class="layer-badge" style="background: var(--user-space); color: white;">Ring 3</span>
+                    </div>
+                    <span style="font-family: monospace; font-size: 0.9em;">syscall_exit</span>
+                </div>
+                <div class="layer-content">
+                    <div class="operations">
+                        <div class="operation">
+                            <div class="operation-label">Data Copy</div>
+                            <div class="operation-value">copy_to_user(buf, kernel_buf, 4096) → userspace</div>
+                        </div>
+                        <div class="operation">
+                            <div class="operation-label">Context Restore</div>
+                            <div class="operation-value">Kernel Mode → User Mode (SYSRET instruction)</div>
+                        </div>
+                        <div class="data-packet">
+                            <div class="packet-header">✅ Return Value</div>
+                            <div class="packet-fields">
+                                <span class="packet-field-name">bytes_read:</span>
+                                <span class="packet-field-value" id="result-bytes">4096</span>
+                                <span class="packet-field-name">total_time:</span>
+                                <span class="packet-field-value">~175μs</span>
+                                <span class="packet-field-name">status:</span>
+                                <span class="packet-field-value">Success</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="metrics">
+                        <div class="metric">
+                            <div class="metric-value">User</div>
+                            <div class="metric-label">CPU Mode</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-value">175μs</div>
+                            <div class="metric-label">Total Time</div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
     <script>
-        // Kernel execution data model
-        const kernelSequences = {
-            read: {
-                name: "read() - File Read Operation",
-                description: "Reading data from a file descriptor",
-                stages: [
-                    {
-                        title: "User Space - Application Layer",
-                        description: "Application invokes read() system call to read data from a file",
-                        flows: [
-                            { label: "File Descriptor", value: "fd=3" },
-                            { label: "Buffer", value: "*buf" },
-                            { label: "Count", value: "1024 bytes" }
-                        ],
-                        code: `<span class="comment">// User application code</span>
-<span class="keyword">char</span> buffer[<span class="string">1024</span>];
-<span class="keyword">int</span> fd = <span class="function">open</span>(<span class="string">"/etc/passwd"</span>, O_RDONLY);
-<span class="keyword">ssize_t</span> bytes = <span class="function">read</span>(fd, buffer, <span class="keyword">sizeof</span>(buffer));`,
-                        metrics: [
-                            { label: "Process ID", value: "1234", type: "cpu" },
-                            { label: "Mode", value: "User", type: "kernel-mode" }
-                        ]
-                    },
-                    {
-                        title: "System Call Interface",
-                        description: "Transition from user space to kernel space via system call trap",
-                        flows: [
-                            { label: "Syscall Number", value: "SYS_read (0)" },
-                            { label: "CPU Mode", value: "User → Kernel" },
-                            { label: "Privilege Level", value: "Ring 3 → Ring 0" }
-                        ],
-                        code: `<span class="comment">// System call entry point</span>
-<span class="function">SYSCALL_DEFINE3</span>(read, <span class="keyword">unsigned int</span>, fd,
-                <span class="keyword">char __user *</span>, buf,
-                <span class="keyword">size_t</span>, count) {
-    <span class="keyword">return</span> <span class="function">ksys_read</span>(fd, buf, count);
-}`,
-                        metrics: [
-                            { label: "Context Switch", value: "1μs", type: "cpu" },
-                            { label: "Mode", value: "Kernel", type: "kernel-mode" }
-                        ]
-                    },
-                    {
-                        title: "Virtual File System (VFS)",
-                        description: "VFS layer resolves file descriptor to file structure and determines appropriate file operations",
-                        flows: [
-                            { label: "FD Table", value: "fd → file*" },
-                            { label: "File Structure", value: "struct file" },
-                            { label: "Operations", value: "f_op->read" }
-                        ],
-                        code: `<span class="comment">// VFS read operation</span>
-<span class="keyword">ssize_t</span> <span class="function">ksys_read</span>(<span class="keyword">unsigned int</span> fd, <span class="keyword">char __user *</span>buf, <span class="keyword">size_t</span> count) {
-    <span class="keyword">struct</span> fd f = <span class="function">fdget_pos</span>(fd);
-    <span class="keyword">if</span> (f.file) {
-        <span class="keyword">ssize_t</span> ret = <span class="function">vfs_read</span>(f.file, buf, count, &pos);
-        <span class="function">fdput_pos</span>(f);
-        <span class="keyword">return</span> ret;
-    }
-}`,
-                        metrics: [
-                            { label: "Inode", value: "i:524288", type: "memory" },
-                            { label: "Dentry Cache", value: "Hit", type: "kernel-mode" }
-                        ]
-                    },
-                    {
-                        title: "File System Layer",
-                        description: "File system specific read operation (ext4, xfs, etc.) processes the request",
-                        flows: [
-                            { label: "FS Type", value: "ext4" },
-                            { label: "Block Map", value: "logical → physical" },
-                            { label: "Page Cache", value: "Check cache" }
-                        ],
-                        code: `<span class="comment">// ext4 file system read</span>
-<span class="keyword">static ssize_t</span> <span class="function">ext4_file_read_iter</span>(<span class="keyword">struct</span> kiocb *iocb,
-                                    <span class="keyword">struct</span> iov_iter *to) {
-    <span class="comment">// Check page cache first</span>
-    <span class="keyword">if</span> (<span class="function">page_cache_hit</span>()) {
-        <span class="keyword">return</span> <span class="function">generic_file_read_iter</span>(iocb, to);
-    }
-    <span class="comment">// Cache miss - read from disk</span>
-    <span class="keyword">return</span> <span class="function">ext4_direct_IO</span>(iocb, to);
-}`,
-                        metrics: [
-                            { label: "Block Size", value: "4096B", type: "memory" },
-                            { label: "Cache Hit", value: "85%", type: "kernel-mode" }
-                        ]
-                    },
-                    {
-                        title: "Block Layer & Device Driver",
-                        description: "Block I/O layer prepares request and device driver executes physical read from storage",
-                        flows: [
-                            { label: "Block Request", value: "submit_bio()" },
-                            { label: "I/O Scheduler", value: "mq-deadline" },
-                            { label: "Device", value: "/dev/sda" }
-                        ],
-                        code: `<span class="comment">// Block layer I/O submission</span>
-<span class="keyword">void</span> <span class="function">submit_bio</span>(<span class="keyword">struct</span> bio *bio) {
-    <span class="comment">// Add to I/O scheduler queue</span>
-    <span class="function">blk_mq_submit_bio</span>(bio);
+        let executionActive = false;
+        let currentLayer = 0;
 
-    <span class="comment">// Wait for DMA transfer</span>
-    <span class="keyword">struct</span> request *rq = <span class="function">blk_mq_get_request</span>();
-    <span class="function">blk_execute_rq</span>(rq);
-}`,
-                        metrics: [
-                            { label: "I/O Size", value: "4KB", type: "memory" },
-                            { label: "Latency", value: "150μs", type: "cpu" },
-                            { label: "Queue Depth", value: "32", type: "kernel-mode" }
-                        ]
-                    },
-                    {
-                        title: "Return to User Space",
-                        description: "Data copied to user buffer and control returns to application",
-                        flows: [
-                            { label: "Data Copy", value: "kernel → user" },
-                            { label: "Return Value", value: "1024 bytes" },
-                            { label: "CPU Mode", value: "Kernel → User" }
-                        ],
-                        code: `<span class="comment">// Return from system call</span>
-<span class="keyword">ssize_t</span> ret = <span class="function">copy_to_user</span>(buf, kernel_buf, count);
+        const layers = [
+            'layer-user',
+            'layer-syscall',
+            'layer-vfs',
+            'layer-fs',
+            'layer-block',
+            'layer-device',
+            'layer-return'
+        ];
 
-<span class="comment">// Restore user context and return</span>
-<span class="function">syscall_exit</span>();
-<span class="keyword">return</span> count; <span class="comment">// bytes read</span>`,
-                        metrics: [
-                            { label: "Bytes Read", value: "1024", type: "memory" },
-                            { label: "Total Time", value: "175μs", type: "cpu" },
-                            { label: "Mode", value: "User", type: "kernel-mode" }
-                        ]
-                    }
-                ]
-            }
-        };
+        const flows = [
+            'flow-1',
+            'flow-2',
+            'flow-3',
+            'flow-4',
+            'flow-5',
+            'flow-6'
+        ];
 
-        // Application state
-        let currentSequence = 'read';
-        let currentStage = 0;
-        let isPlaying = false;
-        let playInterval = null;
+        function executeSystemCall() {
+            if (executionActive) return;
 
-        // DOM elements
-        const flowContainer = document.getElementById('flow-container');
-        const startBtn = document.getElementById('start-btn');
-        const stepBtn = document.getElementById('step-btn');
-        const resetBtn = document.getElementById('reset-btn');
-        const syscallSelect = document.getElementById('syscall-select');
-        const timeline = document.getElementById('timeline');
+            executionActive = true;
+            currentLayer = 0;
 
-        // Initialize visualization
-        function init() {
-            renderStages();
-            updateTimeline();
-        }
+            // Update parameters from input
+            const fd = document.getElementById('fd-input').value;
+            const size = document.getElementById('size-input').value;
+            document.getElementById('param-fd').textContent = fd;
+            document.getElementById('param-count').textContent = size;
+            document.getElementById('result-bytes').textContent = size;
 
-        // Render all stages
-        function renderStages() {
-            const sequence = kernelSequences[currentSequence];
-            flowContainer.innerHTML = '';
-
-            sequence.stages.forEach((stage, index) => {
-                const stageEl = createStageElement(stage, index);
-                flowContainer.appendChild(stageEl);
+            // Reset all layers
+            layers.forEach(id => {
+                document.getElementById(id).classList.remove('active');
             });
-        }
-
-        // Create stage element
-        function createStageElement(stage, index) {
-            const stageDiv = document.createElement('div');
-            stageDiv.className = 'stage';
-            stageDiv.dataset.stage = index;
-
-            // Header
-            const header = document.createElement('div');
-            header.className = 'stage-header';
-            header.innerHTML = `
-                <div class="stage-title">
-                    <div class="stage-number">${index + 1}</div>
-                    <span>${stage.title}</span>
-                </div>
-                <div class="expand-icon">▼</div>
-            `;
-            header.onclick = () => toggleStage(index);
-
-            // Content
-            const content = document.createElement('div');
-            content.className = 'stage-content';
-
-            const description = document.createElement('p');
-            description.className = 'stage-description';
-            description.textContent = stage.description;
-
-            // Data flows
-            const flowDiv = document.createElement('div');
-            flowDiv.className = 'data-flow';
-            stage.flows.forEach((flow, i) => {
-                if (i > 0) {
-                    const arrow = document.createElement('div');
-                    arrow.className = 'flow-arrow';
-                    arrow.textContent = '→';
-                    flowDiv.appendChild(arrow);
-                }
-                const box = document.createElement('div');
-                box.className = 'flow-box';
-                box.innerHTML = `
-                    <div class="flow-label">${flow.label}</div>
-                    <div class="flow-value">${flow.value}</div>
-                `;
-                flowDiv.appendChild(box);
+            flows.forEach(id => {
+                document.getElementById(id).classList.remove('active');
             });
 
-            // Code block
-            const codeBlock = document.createElement('div');
-            codeBlock.className = 'code-block';
-            codeBlock.innerHTML = stage.code;
-
-            // Metrics
-            const metricsGrid = document.createElement('div');
-            metricsGrid.className = 'metrics-grid';
-            stage.metrics.forEach(metric => {
-                const card = document.createElement('div');
-                card.className = `metric-card ${metric.type}`;
-                card.innerHTML = `
-                    <div class="metric-label">${metric.label}</div>
-                    <div class="metric-value">${metric.value}</div>
-                `;
-                metricsGrid.appendChild(card);
-            });
-
-            content.appendChild(description);
-            content.appendChild(flowDiv);
-            content.appendChild(codeBlock);
-            content.appendChild(metricsGrid);
-
-            stageDiv.appendChild(header);
-            stageDiv.appendChild(content);
-
-            return stageDiv;
+            // Start execution sequence
+            executeLayer(0);
         }
 
-        // Toggle stage expansion
-        function toggleStage(index) {
-            const stageEl = document.querySelector(`.stage[data-stage="${index}"]`);
-            const content = stageEl.querySelector('.stage-content');
-            const icon = stageEl.querySelector('.expand-icon');
-
-            content.classList.toggle('expanded');
-            icon.classList.toggle('expanded');
-        }
-
-        // Start visualization
-        function startVisualization() {
-            if (isPlaying) {
-                stopVisualization();
+        function executeLayer(index) {
+            if (index >= layers.length) {
+                executionActive = false;
                 return;
             }
 
-            isPlaying = true;
-            startBtn.textContent = '⏸ Pause';
-            currentStage = 0;
+            // Activate current layer
+            document.getElementById(layers[index]).classList.add('active');
 
-            playInterval = setInterval(() => {
-                executeStage(currentStage);
-                currentStage++;
-
-                if (currentStage >= kernelSequences[currentSequence].stages.length) {
-                    stopVisualization();
-                    currentStage = kernelSequences[currentSequence].stages.length - 1;
-                }
-            }, 2000);
-        }
-
-        // Stop visualization
-        function stopVisualization() {
-            isPlaying = false;
-            startBtn.textContent = '▶ Start Visualization';
-            if (playInterval) {
-                clearInterval(playInterval);
-                playInterval = null;
+            // Activate flow to next layer (if exists)
+            if (index < flows.length) {
+                setTimeout(() => {
+                    document.getElementById(flows[index]).classList.add('active');
+                }, 300);
             }
-        }
 
-        // Execute single stage
-        function executeStage(index) {
-            // Update stages
-            document.querySelectorAll('.stage').forEach((stage, i) => {
-                stage.classList.remove('executing', 'completed');
-                if (i < index) {
-                    stage.classList.add('completed');
-                } else if (i === index) {
-                    stage.classList.add('executing');
-                    // Auto-expand current stage
-                    const content = stage.querySelector('.stage-content');
-                    const icon = stage.querySelector('.expand-icon');
-                    if (!content.classList.contains('expanded')) {
-                        content.classList.add('expanded');
-                        icon.classList.add('expanded');
+            // Deactivate previous layer after brief overlap
+            if (index > 0) {
+                setTimeout(() => {
+                    document.getElementById(layers[index - 1]).classList.remove('active');
+                    if (index > 1) {
+                        document.getElementById(flows[index - 2]).classList.remove('active');
                     }
-                    // Scroll into view
-                    stage.scrollIntoView({ behavior: 'smooth', block: 'center' });
-
-                    // Activate flow boxes
-                    const flowBoxes = stage.querySelectorAll('.flow-box');
-                    flowBoxes.forEach((box, boxIndex) => {
-                        setTimeout(() => {
-                            box.classList.add('active');
-                        }, boxIndex * 300);
-                    });
-                }
-            });
-
-            updateTimeline();
-        }
-
-        // Update timeline
-        function updateTimeline() {
-            const steps = timeline.querySelectorAll('.timeline-step');
-            steps.forEach((step, i) => {
-                step.classList.remove('active', 'completed');
-                if (i < currentStage) {
-                    step.classList.add('completed');
-                } else if (i === currentStage) {
-                    step.classList.add('active');
-                }
-            });
-        }
-
-        // Step through
-        function stepThrough() {
-            if (currentStage < kernelSequences[currentSequence].stages.length) {
-                executeStage(currentStage);
-                currentStage++;
+                }, 800);
             }
+
+            // Move to next layer
+            setTimeout(() => {
+                executeLayer(index + 1);
+            }, 1200);
         }
 
-        // Reset visualization
-        function reset() {
-            stopVisualization();
-            currentStage = 0;
-            document.querySelectorAll('.stage').forEach(stage => {
-                stage.classList.remove('executing', 'completed');
-                stage.querySelector('.stage-content').classList.remove('expanded');
-                stage.querySelector('.expand-icon').classList.remove('expanded');
-                stage.querySelectorAll('.flow-box').forEach(box => {
-                    box.classList.remove('active');
-                });
-            });
-            updateTimeline();
-        }
-
-        // Change system call
-        function changeSystemCall() {
-            currentSequence = syscallSelect.value;
-            reset();
-            renderStages();
-        }
-
-        // Event listeners
-        startBtn.onclick = startVisualization;
-        stepBtn.onclick = stepThrough;
-        resetBtn.onclick = reset;
-        syscallSelect.onchange = changeSystemCall;
-
-        // Initialize on load
-        init();
+        // Auto-execute on load for demo
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                executeSystemCall();
+            }, 1000);
+        });
     </script>
 </body>
 </html>
