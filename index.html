@@ -6,18 +6,26 @@
     <title>Kernel Lens - Interactive Kernel Execution Visualizer</title>
     <style>
         :root {
-            --primary: #667eea;
-            --secondary: #764ba2;
-            --user-space: #f093fb;
-            --kernel-space: #4facfe;
-            --vfs: #43e97b;
-            --fs: #fa709a;
-            --block: #fee140;
-            --device: #30cfd0;
-            --bg: #0f0f23;
-            --text: #cccccc;
-            --text-bright: #ffffff;
-            --border: #333344;
+            --bg-primary: #0a0e27;
+            --bg-secondary: #151a35;
+            --bg-tertiary: #1e2542;
+            --accent-primary: #667eea;
+            --accent-secondary: #764ba2;
+            --text-primary: #e8eaf6;
+            --text-secondary: #9fa8da;
+            --text-muted: #5c6bc0;
+            --border: #283593;
+            --success: #4caf50;
+            --warning: #ff9800;
+            --error: #f44336;
+
+            /* Layer colors */
+            --layer-user: #f093fb;
+            --layer-syscall: #4facfe;
+            --layer-vfs: #43e97b;
+            --layer-fs: #fa709a;
+            --layer-block: #fee140;
+            --layer-device: #30cfd0;
         }
 
         * {
@@ -27,14 +35,15 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-            background: var(--bg);
-            color: var(--text);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
             overflow-x: hidden;
         }
 
         .container {
-            max-width: 1600px;
+            max-width: 1800px;
             margin: 0 auto;
             padding: 20px;
         }
@@ -42,211 +51,341 @@
         /* Header */
         header {
             text-align: center;
-            padding: 40px 20px 20px;
-            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
-            border-radius: 12px;
+            padding: 40px 20px;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            border-radius: 16px;
             margin-bottom: 30px;
+            box-shadow: 0 10px 40px rgba(102, 126, 234, 0.3);
         }
 
         header h1 {
-            font-size: 2.5em;
+            font-size: 3em;
             color: white;
             margin-bottom: 10px;
-            font-weight: 700;
+            font-weight: 800;
+            letter-spacing: -1px;
         }
 
         header p {
-            color: rgba(255,255,255,0.9);
-            font-size: 1.1em;
+            color: rgba(255,255,255,0.95);
+            font-size: 1.2em;
+            font-weight: 300;
         }
 
-        /* Input Control */
-        .input-section {
-            background: #1a1a2e;
+        /* Control Panel */
+        .control-panel {
+            background: var(--bg-secondary);
             border: 2px solid var(--border);
-            border-radius: 12px;
-            padding: 25px;
-            margin-bottom: 20px;
-            display: flex;
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+        }
+
+        .control-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
             gap: 20px;
-            align-items: center;
-            flex-wrap: wrap;
+            margin-bottom: 20px;
         }
 
-        .input-section label {
-            font-weight: 600;
-            color: var(--text-bright);
-            font-size: 1.1em;
-        }
-
-        .syscall-input {
-            flex: 1;
-            min-width: 300px;
+        .control-group {
             display: flex;
-            gap: 10px;
+            flex-direction: column;
+            gap: 8px;
         }
 
-        select, input[type="text"], input[type="number"] {
+        .control-label {
+            font-size: 0.9em;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        select, input[type="number"], input[type="text"] {
             padding: 12px 16px;
+            background: var(--bg-tertiary);
             border: 2px solid var(--border);
-            border-radius: 8px;
-            background: var(--bg);
-            color: var(--text-bright);
+            border-radius: 10px;
+            color: var(--text-primary);
             font-size: 1em;
             font-family: 'Courier New', monospace;
+            transition: all 0.3s;
         }
 
-        select {
-            min-width: 200px;
+        select:hover, input:hover {
+            border-color: var(--accent-primary);
         }
 
-        input[type="text"] {
-            flex: 1;
+        select:focus, input:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
         }
 
-        input[type="number"] {
-            width: 120px;
-        }
-
-        button.execute-btn {
-            padding: 12px 30px;
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
+        .btn {
+            padding: 14px 32px;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
             border: none;
-            border-radius: 8px;
+            border-radius: 10px;
             color: white;
             font-weight: 700;
             font-size: 1em;
             cursor: pointer;
-            transition: transform 0.2s;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
         }
 
-        button.execute-btn:hover {
+        .btn:hover {
             transform: translateY(-2px);
+            box-shadow: 0 6px 25px rgba(102, 126, 234, 0.5);
         }
 
-        /* Main Visualization Area */
-        .viz-container {
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        /* Main Layout - Three Column */
+        .main-layout {
             display: grid;
-            grid-template-columns: 1fr;
-            gap: 0;
-            position: relative;
+            grid-template-columns: 300px 1fr 350px;
+            gap: 20px;
+            margin-bottom: 30px;
         }
 
-        /* Layer Styles */
-        .layer {
-            background: #1a1a2e;
+        @media (max-width: 1400px) {
+            .main-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Left Sidebar - Layer Navigator */
+        .layer-navigator {
+            background: var(--bg-secondary);
             border: 2px solid var(--border);
-            border-radius: 12px;
+            border-radius: 16px;
             padding: 20px;
-            position: relative;
+            height: fit-content;
+            position: sticky;
+            top: 20px;
+        }
+
+        .nav-title {
+            font-size: 1.1em;
+            font-weight: 700;
             margin-bottom: 15px;
+            color: var(--text-primary);
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            margin-bottom: 8px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border-left: 3px solid transparent;
+        }
+
+        .nav-item:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .nav-item.active {
+            background: var(--bg-tertiary);
+            border-left-color: currentColor;
+            box-shadow: 0 0 15px currentColor;
+        }
+
+        .nav-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: currentColor;
             transition: all 0.3s;
         }
 
-        .layer.active {
+        .nav-item.active .nav-indicator {
+            animation: pulse-indicator 1.5s infinite;
+        }
+
+        @keyframes pulse-indicator {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.3); opacity: 0.7; }
+        }
+
+        .nav-label {
+            flex: 1;
+            font-size: 0.9em;
+            font-weight: 600;
+        }
+
+        .nav-time {
+            font-size: 0.75em;
+            font-family: 'Courier New', monospace;
+            color: var(--text-muted);
+        }
+
+        /* Center - Main Visualization */
+        .main-viz {
+            background: var(--bg-secondary);
+            border: 2px solid var(--border);
+            border-radius: 16px;
+            padding: 30px;
+            min-height: 800px;
+        }
+
+        .viz-header {
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .viz-title {
+            font-size: 1.5em;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .viz-subtitle {
+            color: var(--text-secondary);
+            font-size: 0.95em;
+        }
+
+        /* Layer Card */
+        .layer-card {
+            background: var(--bg-tertiary);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 20px;
+            transition: all 0.4s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .layer-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: currentColor;
+            opacity: 0.3;
+            transition: all 0.4s;
+        }
+
+        .layer-card:hover::before {
+            opacity: 0.7;
+            width: 6px;
+        }
+
+        .layer-card.active {
             border-color: currentColor;
-            box-shadow: 0 0 20px currentColor;
+            box-shadow: 0 0 30px currentColor, inset 0 0 15px rgba(255,255,255,0.05);
+            transform: translateX(5px);
+        }
+
+        .layer-card.active::before {
+            opacity: 1;
+            width: 6px;
         }
 
         .layer-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 15px;
-            padding-bottom: 10px;
-            border-bottom: 1px solid var(--border);
+            margin-bottom: 20px;
+        }
+
+        .layer-title-group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .layer-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            background: currentColor;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2em;
+            color: var(--bg-primary);
+            font-weight: 700;
         }
 
         .layer-title {
-            font-size: 1.4em;
+            font-size: 1.3em;
             font-weight: 700;
-            display: flex;
-            align-items: center;
-            gap: 10px;
         }
 
         .layer-badge {
-            display: inline-block;
-            padding: 4px 12px;
+            padding: 6px 14px;
             border-radius: 20px;
-            font-size: 0.7em;
+            font-size: 0.75em;
             font-weight: 600;
+            background: currentColor;
+            color: var(--bg-primary);
             text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
-        .layer-content {
+        .layer-details {
             display: grid;
-            grid-template-columns: 2fr 1fr;
-            gap: 20px;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
         }
 
-        .operations {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
+        @media (max-width: 1100px) {
+            .layer-details {
+                grid-template-columns: 1fr;
+            }
         }
 
-        .operation {
-            background: rgba(255,255,255,0.05);
-            border-left: 3px solid currentColor;
-            padding: 12px 15px;
-            border-radius: 6px;
+        .detail-section {
+            background: rgba(255,255,255,0.03);
+            border-radius: 10px;
+            padding: 15px;
+        }
+
+        .detail-title {
+            font-size: 0.85em;
+            font-weight: 700;
+            color: var(--text-secondary);
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .detail-content {
             font-family: 'Courier New', monospace;
             font-size: 0.9em;
-            position: relative;
-            overflow: hidden;
+            color: var(--text-primary);
+            line-height: 1.8;
         }
 
-        .operation.active {
+        .code-inline {
             background: rgba(255,255,255,0.1);
-            animation: glow 1s ease-in-out infinite;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.95em;
         }
 
-        @keyframes glow {
-            0%, 100% { box-shadow: 0 0 5px currentColor; }
-            50% { box-shadow: 0 0 15px currentColor; }
-        }
-
-        .operation-label {
-            color: var(--text);
-            font-size: 0.85em;
-            margin-bottom: 4px;
-        }
-
-        .operation-value {
-            color: var(--text-bright);
-            font-weight: 600;
-        }
-
-        .metrics {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .metric {
-            background: rgba(255,255,255,0.05);
-            padding: 10px;
-            border-radius: 6px;
-            text-align: center;
-        }
-
-        .metric-value {
-            font-size: 1.8em;
+        .highlight {
+            color: currentColor;
             font-weight: 700;
-            color: var(--text-bright);
-            font-family: 'Courier New', monospace;
         }
 
-        .metric-label {
-            font-size: 0.85em;
-            color: var(--text);
-            margin-top: 4px;
-        }
-
-        /* Flow Connectors */
+        /* Data Flow Visualization */
         .flow-connector {
-            height: 60px;
+            height: 80px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -255,170 +394,212 @@
         }
 
         .flow-line {
-            width: 4px;
+            width: 3px;
             height: 100%;
-            background: linear-gradient(180deg, transparent, currentColor, transparent);
+            background: linear-gradient(180deg,
+                transparent,
+                var(--border) 20%,
+                var(--border) 80%,
+                transparent);
             position: relative;
-            overflow: hidden;
+        }
+
+        .flow-particles {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
         }
 
         .flow-particle {
             position: absolute;
-            width: 8px;
-            height: 8px;
-            background: currentColor;
+            width: 10px;
+            height: 10px;
             border-radius: 50%;
+            background: currentColor;
+            box-shadow: 0 0 15px currentColor;
             left: 50%;
             transform: translateX(-50%);
-            animation: flow-down 1.5s linear infinite;
             opacity: 0;
-            box-shadow: 0 0 10px currentColor;
-        }
-
-        @keyframes flow-down {
-            0% { top: 0%; opacity: 0; }
-            10% { opacity: 1; }
-            90% { opacity: 1; }
-            100% { top: 100%; opacity: 0; }
         }
 
         .flow-connector.active .flow-particle {
+            animation: flow-particle 2s ease-in-out infinite;
+        }
+
+        @keyframes flow-particle {
+            0% { top: -10px; opacity: 0; transform: translateX(-50%) scale(0.5); }
+            10% { opacity: 1; transform: translateX(-50%) scale(1); }
+            90% { opacity: 1; transform: translateX(-50%) scale(1); }
+            100% { top: 100%; opacity: 0; transform: translateX(-50%) scale(0.5); }
+        }
+
+        .flow-particle:nth-child(2) { animation-delay: 0.4s; }
+        .flow-particle:nth-child(3) { animation-delay: 0.8s; }
+
+        /* Right Sidebar - Metrics & Insights */
+        .metrics-panel {
+            background: var(--bg-secondary);
+            border: 2px solid var(--border);
+            border-radius: 16px;
+            padding: 20px;
+            height: fit-content;
+            position: sticky;
+            top: 20px;
+        }
+
+        .metrics-title {
+            font-size: 1.1em;
+            font-weight: 700;
+            margin-bottom: 15px;
+        }
+
+        .metric-card {
+            background: var(--bg-tertiary);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 12px;
+            border-left: 3px solid currentColor;
+        }
+
+        .metric-label {
+            font-size: 0.8em;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 5px;
+        }
+
+        .metric-value {
+            font-size: 1.8em;
+            font-weight: 700;
+            font-family: 'Courier New', monospace;
+            color: var(--text-primary);
+        }
+
+        .metric-subtext {
+            font-size: 0.75em;
+            color: var(--text-muted);
+            margin-top: 3px;
+        }
+
+        /* Performance Chart */
+        .perf-chart {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 2px solid var(--border);
+        }
+
+        .chart-title {
+            font-size: 0.9em;
+            font-weight: 700;
+            color: var(--text-secondary);
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .chart-bar {
+            margin-bottom: 12px;
+        }
+
+        .chart-bar-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75em;
+            margin-bottom: 5px;
+            color: var(--text-secondary);
+        }
+
+        .chart-bar-fill {
+            height: 8px;
+            background: currentColor;
+            border-radius: 4px;
+            transition: all 0.6s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .chart-bar-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+
+        /* Tooltip */
+        .tooltip {
+            position: fixed;
+            background: var(--bg-tertiary);
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            padding: 12px 16px;
+            font-size: 0.85em;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s;
+            z-index: 1000;
+            max-width: 300px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        .tooltip.show {
             opacity: 1;
         }
 
-        /* Data Packet Visualization */
-        .data-packet {
-            background: rgba(255,255,255,0.1);
-            border: 2px dashed currentColor;
-            border-radius: 8px;
-            padding: 15px;
-            margin: 10px 0;
-            font-family: 'Courier New', monospace;
-            font-size: 0.9em;
-        }
-
-        .packet-header {
-            font-weight: 700;
-            color: var(--text-bright);
-            margin-bottom: 8px;
-            font-size: 0.95em;
-        }
-
-        .packet-fields {
-            display: grid;
-            grid-template-columns: auto 1fr;
-            gap: 8px 15px;
-            font-size: 0.85em;
-        }
-
-        .packet-field-name {
-            color: var(--text);
-        }
-
-        .packet-field-value {
-            color: var(--text-bright);
-            font-weight: 600;
-        }
-
-        /* Color coding for layers */
-        .layer.user-space {
-            color: var(--user-space);
-        }
-
-        .layer.syscall-interface {
-            color: var(--kernel-space);
-        }
-
-        .layer.vfs {
-            color: var(--vfs);
-        }
-
-        .layer.filesystem {
-            color: var(--fs);
-        }
-
-        .layer.block {
-            color: var(--block);
-        }
-
-        .layer.device {
-            color: var(--device);
-        }
-
-        /* Info Panel */
-        .info-panel {
-            background: #1a1a2e;
-            border: 2px solid var(--border);
+        /* Info callout */
+        .info-callout {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+            border: 2px solid var(--accent-primary);
             border-radius: 12px;
             padding: 20px;
-            margin-bottom: 20px;
+            margin-bottom: 30px;
         }
 
-        .info-panel h3 {
-            color: var(--text-bright);
+        .info-callout-title {
+            font-size: 1.1em;
+            font-weight: 700;
             margin-bottom: 10px;
+            color: var(--accent-primary);
         }
 
-        .info-panel p {
-            line-height: 1.6;
+        .info-callout-text {
+            color: var(--text-secondary);
+            line-height: 1.7;
         }
 
-        /* Code Display */
-        .code-snippet {
-            background: #0d0d1e;
-            border-radius: 6px;
-            padding: 12px;
-            font-family: 'Courier New', monospace;
-            font-size: 0.85em;
-            margin-top: 10px;
-            overflow-x: auto;
+        /* Loading state */
+        @keyframes gradient-shift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
         }
 
-        .code-snippet .keyword { color: #c678dd; }
-        .code-snippet .function { color: #61afef; }
-        .code-snippet .string { color: #98c379; }
-        .code-snippet .comment { color: #5c6370; font-style: italic; }
-        .code-snippet .type { color: #e5c07b; }
-
-        /* Legend */
-        .legend {
-            display: flex;
-            gap: 20px;
-            flex-wrap: wrap;
-            background: #1a1a2e;
-            border: 2px solid var(--border);
-            border-radius: 12px;
-            padding: 15px 20px;
-            margin-bottom: 20px;
-        }
-
-        .legend-item {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .legend-color {
-            width: 16px;
-            height: 16px;
-            border-radius: 50%;
+        .loading {
+            background: linear-gradient(270deg, var(--bg-tertiary), var(--bg-secondary), var(--bg-tertiary));
+            background-size: 200% 200%;
+            animation: gradient-shift 2s ease infinite;
         }
 
         /* Responsive */
-        @media (max-width: 1024px) {
-            .layer-content {
-                grid-template-columns: 1fr;
-            }
-        }
-
         @media (max-width: 768px) {
-            .input-section {
-                flex-direction: column;
-                align-items: stretch;
+            header h1 {
+                font-size: 2em;
             }
 
-            .syscall-input {
-                flex-direction: column;
+            .control-grid {
+                grid-template-columns: 1fr;
             }
         }
     </style>
@@ -427,511 +608,423 @@
     <div class="container">
         <header>
             <h1>🔍 Kernel Lens</h1>
-            <p>Interactive Kernel Execution Visualizer - Watch syscalls flow through the kernel in real-time</p>
+            <p>Explore the inner workings of the Linux kernel through interactive visualization</p>
         </header>
 
-        <div class="info-panel">
-            <h3>How to use:</h3>
-            <p>Select a system call, configure its parameters, and click Execute. Watch as your request flows through every layer of the kernel stack - all visible simultaneously. Hover over operations for details.</p>
-        </div>
-
-        <div class="input-section">
-            <label>System Call:</label>
-            <div class="syscall-input">
-                <select id="syscall-select">
-                    <option value="read">read(fd, buf, count)</option>
-                    <option value="write">write(fd, buf, count)</option>
-                    <option value="open">open(pathname, flags)</option>
-                    <option value="close">close(fd)</option>
-                </select>
-                <input type="number" id="fd-input" placeholder="fd" value="3">
-                <input type="number" id="size-input" placeholder="size" value="4096">
-            </div>
-            <button class="execute-btn" onclick="executeSystemCall()">⚡ Execute</button>
-        </div>
-
-        <div class="legend">
-            <div class="legend-item">
-                <div class="legend-color" style="background: var(--user-space);"></div>
-                <span>User Space</span>
-            </div>
-            <div class="legend-item">
-                <div class="legend-color" style="background: var(--kernel-space);"></div>
-                <span>Syscall Interface</span>
-            </div>
-            <div class="legend-item">
-                <div class="legend-color" style="background: var(--vfs);"></div>
-                <span>VFS Layer</span>
-            </div>
-            <div class="legend-item">
-                <div class="legend-color" style="background: var(--fs);"></div>
-                <span>Filesystem</span>
-            </div>
-            <div class="legend-item">
-                <div class="legend-color" style="background: var(--block);"></div>
-                <span>Block Layer</span>
-            </div>
-            <div class="legend-item">
-                <div class="legend-color" style="background: var(--device);"></div>
-                <span>Device Driver</span>
+        <div class="info-callout">
+            <div class="info-callout-title">💡 How to Explore</div>
+            <div class="info-callout-text">
+                Configure your system call below and click Execute. Watch as data flows through every layer of the kernel stack.
+                Hover over any layer to see detailed information. The entire execution path is visible simultaneously -
+                observe how parameters affect timing, cache behavior, and I/O operations in real-time.
             </div>
         </div>
 
-        <div class="viz-container">
-            <!-- USER SPACE LAYER -->
-            <div class="layer user-space" id="layer-user">
-                <div class="layer-header">
-                    <div class="layer-title">
-                        <span>User Space</span>
-                        <span class="layer-badge" style="background: var(--user-space); color: white;">Ring 3</span>
-                    </div>
-                    <span style="font-family: monospace; font-size: 0.9em;">PID: 1234</span>
+        <div class="control-panel">
+            <div class="control-grid">
+                <div class="control-group">
+                    <label class="control-label">System Call</label>
+                    <select id="syscall-select">
+                        <option value="read">read() - Read from file descriptor</option>
+                        <option value="write">write() - Write to file descriptor</option>
+                        <option value="open">open() - Open file</option>
+                        <option value="stat">stat() - Get file status</option>
+                    </select>
                 </div>
-                <div class="layer-content">
-                    <div class="operations">
-                        <div class="operation">
-                            <div class="operation-label">Application Code</div>
-                            <div class="code-snippet">
-<span class="type">char</span> buffer[<span class="string">4096</span>];
-<span class="type">int</span> fd = <span class="function">open</span>(<span class="string">"/etc/passwd"</span>, O_RDONLY);
-<span class="type">ssize_t</span> n = <span class="function">read</span>(fd, buffer, <span class="keyword">sizeof</span>(buffer));
-                            </div>
-                        </div>
-                        <div class="data-packet">
-                            <div class="packet-header">📦 Request Parameters</div>
-                            <div class="packet-fields">
-                                <span class="packet-field-name">fd:</span>
-                                <span class="packet-field-value" id="param-fd">3</span>
-                                <span class="packet-field-name">*buf:</span>
-                                <span class="packet-field-value">0x7ffc1234abcd</span>
-                                <span class="packet-field-name">count:</span>
-                                <span class="packet-field-value" id="param-count">4096</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="metrics">
-                        <div class="metric">
-                            <div class="metric-value">User</div>
-                            <div class="metric-label">CPU Mode</div>
-                        </div>
-                        <div class="metric">
-                            <div class="metric-value">0μs</div>
-                            <div class="metric-label">Elapsed</div>
-                        </div>
-                    </div>
+                <div class="control-group">
+                    <label class="control-label">File Descriptor</label>
+                    <input type="number" id="fd-input" value="3" min="0" max="1024">
+                </div>
+                <div class="control-group">
+                    <label class="control-label">Buffer Size (bytes)</label>
+                    <input type="number" id="size-input" value="4096" min="1" max="1048576" step="1024">
+                </div>
+                <div class="control-group">
+                    <label class="control-label">Simulate Cache</label>
+                    <select id="cache-select">
+                        <option value="hot">Hot (High hit rate ~85%)</option>
+                        <option value="cold">Cold (Low hit rate ~15%)</option>
+                        <option value="mixed">Mixed (~50%)</option>
+                    </select>
                 </div>
             </div>
+            <button class="btn" onclick="executeSystemCall()">⚡ Execute System Call</button>
+        </div>
 
-            <!-- FLOW CONNECTOR -->
-            <div class="flow-connector user-space" id="flow-1">
-                <div class="flow-line">
-                    <div class="flow-particle"></div>
-                    <div class="flow-particle" style="animation-delay: 0.5s;"></div>
-                </div>
+        <div class="main-layout">
+            <!-- Left: Layer Navigator -->
+            <div class="layer-navigator">
+                <div class="nav-title">Execution Flow</div>
+                <div id="nav-items"></div>
             </div>
 
-            <!-- SYSCALL INTERFACE LAYER -->
-            <div class="layer syscall-interface" id="layer-syscall">
-                <div class="layer-header">
-                    <div class="layer-title">
-                        <span>System Call Interface</span>
-                        <span class="layer-badge" style="background: var(--kernel-space); color: white;">Ring 0</span>
-                    </div>
-                    <span style="font-family: monospace; font-size: 0.9em;">SYSCALL #0</span>
+            <!-- Center: Main Visualization -->
+            <div class="main-viz">
+                <div class="viz-header">
+                    <div class="viz-title" id="viz-title">System Call Execution Path</div>
+                    <div class="viz-subtitle" id="viz-subtitle">Tracing read(fd=3, buf, count=4096) through the kernel</div>
                 </div>
-                <div class="layer-content">
-                    <div class="operations">
-                        <div class="operation">
-                            <div class="operation-label">Context Switch</div>
-                            <div class="operation-value">User Mode → Kernel Mode (SYSCALL instruction)</div>
-                        </div>
-                        <div class="operation">
-                            <div class="operation-label">Register Mapping</div>
-                            <div class="operation-value">rax=0 (SYS_read), rdi=fd, rsi=buf, rdx=count</div>
-                        </div>
-                        <div class="operation">
-                            <div class="operation-label">Entry Point</div>
-                            <div class="code-snippet">
-<span class="function">SYSCALL_DEFINE3</span>(read, <span class="type">unsigned int</span>, fd,
-    <span class="type">char __user *</span>, buf, <span class="type">size_t</span>, count) {
-    <span class="keyword">return</span> <span class="function">ksys_read</span>(fd, buf, count);
-}
-                            </div>
-                        </div>
-                    </div>
-                    <div class="metrics">
-                        <div class="metric">
-                            <div class="metric-value">Kernel</div>
-                            <div class="metric-label">CPU Mode</div>
-                        </div>
-                        <div class="metric">
-                            <div class="metric-value">~1μs</div>
-                            <div class="metric-label">Context Switch</div>
-                        </div>
-                    </div>
-                </div>
+                <div id="viz-content"></div>
             </div>
 
-            <!-- FLOW CONNECTOR -->
-            <div class="flow-connector syscall-interface" id="flow-2">
-                <div class="flow-line">
-                    <div class="flow-particle"></div>
-                    <div class="flow-particle" style="animation-delay: 0.5s;"></div>
-                </div>
-            </div>
+            <!-- Right: Metrics Panel -->
+            <div class="metrics-panel">
+                <div class="metrics-title">Performance Metrics</div>
+                <div id="metrics-content"></div>
 
-            <!-- VFS LAYER -->
-            <div class="layer vfs" id="layer-vfs">
-                <div class="layer-header">
-                    <div class="layer-title">
-                        <span>Virtual File System (VFS)</span>
-                    </div>
-                    <span style="font-family: monospace; font-size: 0.9em;">vfs_read()</span>
-                </div>
-                <div class="layer-content">
-                    <div class="operations">
-                        <div class="operation">
-                            <div class="operation-label">FD → File Mapping</div>
-                            <div class="operation-value">fdget_pos(fd=3) → struct file *f</div>
-                        </div>
-                        <div class="operation">
-                            <div class="operation-label">File Structure</div>
-                            <div class="operation-value">f_op = ext4_file_operations, f_inode = 0x2a5b91</div>
-                        </div>
-                        <div class="operation">
-                            <div class="operation-label">Permission Check</div>
-                            <div class="operation-value">file_permission(f, MAY_READ) → OK</div>
-                        </div>
-                        <div class="data-packet">
-                            <div class="packet-header">📋 File Descriptor Table</div>
-                            <div class="packet-fields">
-                                <span class="packet-field-name">fd 3:</span>
-                                <span class="packet-field-value">/etc/passwd</span>
-                                <span class="packet-field-name">inode:</span>
-                                <span class="packet-field-value">524288</span>
-                                <span class="packet-field-name">pos:</span>
-                                <span class="packet-field-value">0</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="metrics">
-                        <div class="metric">
-                            <div class="metric-value">Hit</div>
-                            <div class="metric-label">Dentry Cache</div>
-                        </div>
-                        <div class="metric">
-                            <div class="metric-value">~0.5μs</div>
-                            <div class="metric-label">Lookup Time</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- FLOW CONNECTOR -->
-            <div class="flow-connector vfs" id="flow-3">
-                <div class="flow-line">
-                    <div class="flow-particle"></div>
-                    <div class="flow-particle" style="animation-delay: 0.5s;"></div>
-                </div>
-            </div>
-
-            <!-- FILESYSTEM LAYER -->
-            <div class="layer filesystem" id="layer-fs">
-                <div class="layer-header">
-                    <div class="layer-title">
-                        <span>File System (ext4)</span>
-                    </div>
-                    <span style="font-family: monospace; font-size: 0.9em;">ext4_file_read_iter()</span>
-                </div>
-                <div class="layer-content">
-                    <div class="operations">
-                        <div class="operation">
-                            <div class="operation-label">Inode Lookup</div>
-                            <div class="operation-value">Load inode 524288, size=2.1KB, blocks=8</div>
-                        </div>
-                        <div class="operation">
-                            <div class="operation-label">Block Mapping</div>
-                            <div class="operation-value">Logical block 0 → Physical block 12345678</div>
-                        </div>
-                        <div class="operation">
-                            <div class="operation-label">Page Cache Check</div>
-                            <div class="operation-value">find_get_page() → Cache HIT (85% hit rate)</div>
-                        </div>
-                        <div class="data-packet">
-                            <div class="packet-header">🗄️ Extent Tree</div>
-                            <div class="packet-fields">
-                                <span class="packet-field-name">logical:</span>
-                                <span class="packet-field-value">0-7</span>
-                                <span class="packet-field-name">physical:</span>
-                                <span class="packet-field-value">12345678-12345685</span>
-                                <span class="packet-field-name">length:</span>
-                                <span class="packet-field-value">8 blocks (32KB)</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="metrics">
-                        <div class="metric">
-                            <div class="metric-value">4KB</div>
-                            <div class="metric-label">Block Size</div>
-                        </div>
-                        <div class="metric">
-                            <div class="metric-value">85%</div>
-                            <div class="metric-label">Cache Hit</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- FLOW CONNECTOR -->
-            <div class="flow-connector filesystem" id="flow-4">
-                <div class="flow-line">
-                    <div class="flow-particle"></div>
-                    <div class="flow-particle" style="animation-delay: 0.5s;"></div>
-                </div>
-            </div>
-
-            <!-- BLOCK LAYER -->
-            <div class="layer block" id="layer-block">
-                <div class="layer-header">
-                    <div class="layer-title">
-                        <span>Block I/O Layer</span>
-                    </div>
-                    <span style="font-family: monospace; font-size: 0.9em;">submit_bio()</span>
-                </div>
-                <div class="layer-content">
-                    <div class="operations">
-                        <div class="operation">
-                            <div class="operation-label">BIO Creation</div>
-                            <div class="operation-value">bio_alloc(sector=98765424, size=4096)</div>
-                        </div>
-                        <div class="operation">
-                            <div class="operation-label">I/O Scheduler</div>
-                            <div class="operation-value">mq-deadline: merge/sort queue (depth=32)</div>
-                        </div>
-                        <div class="operation">
-                            <div class="operation-label">Request Dispatch</div>
-                            <div class="operation-value">blk_mq_run_hw_queue() → SCSI layer</div>
-                        </div>
-                        <div class="data-packet">
-                            <div class="packet-header">💾 Block Request</div>
-                            <div class="packet-fields">
-                                <span class="packet-field-name">sector:</span>
-                                <span class="packet-field-value">98765424</span>
-                                <span class="packet-field-name">nr_sectors:</span>
-                                <span class="packet-field-value">8</span>
-                                <span class="packet-field-name">queue:</span>
-                                <span class="packet-field-value">depth 12/32</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="metrics">
-                        <div class="metric">
-                            <div class="metric-value">32</div>
-                            <div class="metric-label">Queue Depth</div>
-                        </div>
-                        <div class="metric">
-                            <div class="metric-value">~10μs</div>
-                            <div class="metric-label">Queue Time</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- FLOW CONNECTOR -->
-            <div class="flow-connector block" id="flow-5">
-                <div class="flow-line">
-                    <div class="flow-particle"></div>
-                    <div class="flow-particle" style="animation-delay: 0.5s;"></div>
-                </div>
-            </div>
-
-            <!-- DEVICE LAYER -->
-            <div class="layer device" id="layer-device">
-                <div class="layer-header">
-                    <div class="layer-title">
-                        <span>Device Driver</span>
-                    </div>
-                    <span style="font-family: monospace; font-size: 0.9em;">/dev/sda</span>
-                </div>
-                <div class="layer-content">
-                    <div class="operations">
-                        <div class="operation">
-                            <div class="operation-label">SCSI Command</div>
-                            <div class="operation-value">READ_10: LBA=98765424, transfer_len=4096</div>
-                        </div>
-                        <div class="operation">
-                            <div class="operation-label">DMA Transfer</div>
-                            <div class="operation-value">Setup DMA: device → memory (0x1234abcd0000)</div>
-                        </div>
-                        <div class="operation">
-                            <div class="operation-label">IRQ Handler</div>
-                            <div class="operation-value">scsi_done() → IRQ 45 → complete request</div>
-                        </div>
-                        <div class="data-packet">
-                            <div class="packet-header">🔌 Hardware I/O</div>
-                            <div class="packet-fields">
-                                <span class="packet-field-name">device:</span>
-                                <span class="packet-field-value">SATA SSD</span>
-                                <span class="packet-field-name">latency:</span>
-                                <span class="packet-field-value">~150μs</span>
-                                <span class="packet-field-name">status:</span>
-                                <span class="packet-field-value">✓ Success</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="metrics">
-                        <div class="metric">
-                            <div class="metric-value">150μs</div>
-                            <div class="metric-label">Device Latency</div>
-                        </div>
-                        <div class="metric">
-                            <div class="metric-value">4096B</div>
-                            <div class="metric-label">Transferred</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- FLOW CONNECTOR (RETURN) -->
-            <div class="flow-connector device" id="flow-6">
-                <div class="flow-line">
-                    <div class="flow-particle"></div>
-                    <div class="flow-particle" style="animation-delay: 0.5s;"></div>
-                </div>
-            </div>
-
-            <!-- RETURN TO USER -->
-            <div class="layer user-space" id="layer-return">
-                <div class="layer-header">
-                    <div class="layer-title">
-                        <span>Return to User Space</span>
-                        <span class="layer-badge" style="background: var(--user-space); color: white;">Ring 3</span>
-                    </div>
-                    <span style="font-family: monospace; font-size: 0.9em;">syscall_exit</span>
-                </div>
-                <div class="layer-content">
-                    <div class="operations">
-                        <div class="operation">
-                            <div class="operation-label">Data Copy</div>
-                            <div class="operation-value">copy_to_user(buf, kernel_buf, 4096) → userspace</div>
-                        </div>
-                        <div class="operation">
-                            <div class="operation-label">Context Restore</div>
-                            <div class="operation-value">Kernel Mode → User Mode (SYSRET instruction)</div>
-                        </div>
-                        <div class="data-packet">
-                            <div class="packet-header">✅ Return Value</div>
-                            <div class="packet-fields">
-                                <span class="packet-field-name">bytes_read:</span>
-                                <span class="packet-field-value" id="result-bytes">4096</span>
-                                <span class="packet-field-name">total_time:</span>
-                                <span class="packet-field-value">~175μs</span>
-                                <span class="packet-field-name">status:</span>
-                                <span class="packet-field-value">Success</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="metrics">
-                        <div class="metric">
-                            <div class="metric-value">User</div>
-                            <div class="metric-label">CPU Mode</div>
-                        </div>
-                        <div class="metric">
-                            <div class="metric-value">175μs</div>
-                            <div class="metric-label">Total Time</div>
-                        </div>
-                    </div>
+                <div class="perf-chart">
+                    <div class="chart-title">Time Breakdown</div>
+                    <div id="perf-chart-content"></div>
                 </div>
             </div>
         </div>
     </div>
 
+    <div class="tooltip" id="tooltip"></div>
+
     <script>
-        let executionActive = false;
-        let currentLayer = 0;
+        // Kernel layer data model
+        const kernelLayers = {
+            read: [
+                {
+                    id: 'user',
+                    name: 'User Space',
+                    badge: 'Ring 3',
+                    icon: '👤',
+                    color: 'var(--layer-user)',
+                    time: 0,
+                    description: 'Application initiates system call',
+                    operations: [
+                        { label: 'Function Call', value: 'read(fd, buffer, count)' },
+                        { label: 'Stack Setup', value: 'Push parameters to stack' },
+                        { label: 'Instruction', value: 'SYSCALL / INT 0x80' }
+                    ],
+                    details: [
+                        { title: 'Process Context', content: 'PID: 1234, UID: 1000\nCPU: User mode, Ring 3\nRegisters: rax=0, rdi=fd, rsi=buf, rdx=count' },
+                        { title: 'Memory Layout', content: 'Code: 0x400000-0x401000\nStack: 0x7fff00000000\nHeap: 0x600000+' }
+                    ]
+                },
+                {
+                    id: 'syscall',
+                    name: 'System Call Interface',
+                    badge: 'Ring 0',
+                    icon: '🚪',
+                    color: 'var(--layer-syscall)',
+                    time: 1,
+                    description: 'Transition from user to kernel space',
+                    operations: [
+                        { label: 'Context Switch', value: 'User → Kernel mode transition' },
+                        { label: 'Syscall Table', value: 'sys_call_table[__NR_read] → sys_read' },
+                        { label: 'Parameter Copy', value: 'Copy params from user registers' }
+                    ],
+                    details: [
+                        { title: 'CPU State', content: 'Mode: Kernel (Ring 0)\nPrivilege: Elevated\nCPU Time: ~1μs\nContext switches: +1' },
+                        { title: 'Entry Point', content: 'SYSCALL_DEFINE3(read, ...)\nValidate parameters\nCheck permissions' }
+                    ]
+                },
+                {
+                    id: 'vfs',
+                    name: 'Virtual File System',
+                    badge: 'VFS',
+                    icon: '📂',
+                    color: 'var(--layer-vfs)',
+                    time: 0.5,
+                    description: 'File system abstraction layer',
+                    operations: [
+                        { label: 'FD Lookup', value: 'fdget_pos(fd) → struct file*' },
+                        { label: 'Inode Resolution', value: 'file->f_inode → inode 524288' },
+                        { label: 'Permission Check', value: 'file_permission(MAY_READ) → OK' }
+                    ],
+                    details: [
+                        { title: 'File Structure', content: 'Path: /etc/passwd\nInode: 524288\nSize: 2.1 KB\nf_op: ext4_file_ops' },
+                        { title: 'Dentry Cache', content: 'Cache: HIT ✓\nLookup: O(1)\nLatency: ~0.5μs' }
+                    ]
+                },
+                {
+                    id: 'fs',
+                    name: 'File System (ext4)',
+                    badge: 'EXT4',
+                    icon: '💾',
+                    color: 'var(--layer-fs)',
+                    time: 2,
+                    description: 'File system specific operations',
+                    operations: [
+                        { label: 'Inode Load', value: 'Load inode metadata and extent tree' },
+                        { label: 'Block Mapping', value: 'Logical block 0 → Physical 12345678' },
+                        { label: 'Page Cache', value: 'find_get_page() → Cache status' }
+                    ],
+                    details: [
+                        { title: 'Extent Tree', content: 'Logical: 0-7\nPhysical: 12345678-85\nLength: 8 blocks (32KB)\nAllocated: Yes' },
+                        { title: 'Cache Status', content: 'Hit rate: <span class="highlight">85%</span>\nPages cached: 6/8\nRead required: 2 blocks' }
+                    ]
+                },
+                {
+                    id: 'block',
+                    name: 'Block I/O Layer',
+                    badge: 'BIO',
+                    icon: '⚙️',
+                    color: 'var(--layer-block)',
+                    time: 10,
+                    description: 'Block device I/O scheduling',
+                    operations: [
+                        { label: 'BIO Creation', value: 'bio_alloc(sector, size, READ)' },
+                        { label: 'I/O Scheduler', value: 'mq-deadline: merge/sort queue' },
+                        { label: 'Request Queue', value: 'Add to dispatch queue (depth: 12/32)' }
+                    ],
+                    details: [
+                        { title: 'Block Request', content: 'Sector: 98765424\nSize: 4096 bytes\nOperation: READ\nPriority: Normal' },
+                        { title: 'Queue Stats', content: 'Depth: 12/32\nWait time: ~10μs\nScheduler: mq-deadline' }
+                    ]
+                },
+                {
+                    id: 'device',
+                    name: 'Device Driver',
+                    badge: 'SCSI',
+                    icon: '🔌',
+                    color: 'var(--layer-device)',
+                    time: 150,
+                    description: 'Hardware device interaction',
+                    operations: [
+                        { label: 'SCSI Command', value: 'READ_10: LBA=98765424, len=4096' },
+                        { label: 'DMA Setup', value: 'Setup direct memory access transfer' },
+                        { label: 'IRQ Completion', value: 'IRQ 45 → scsi_done() callback' }
+                    ],
+                    details: [
+                        { title: 'Device Info', content: 'Device: /dev/sda\nType: SATA SSD\nSpeed: 6 Gbps\nLatency: ~150μs' },
+                        { title: 'DMA Transfer', content: 'Method: Direct\nAddress: 0x1234abcd0000\nStatus: ✓ Complete' }
+                    ]
+                },
+                {
+                    id: 'return',
+                    name: 'Return to User',
+                    badge: 'Ring 3',
+                    icon: '↩️',
+                    color: 'var(--layer-user)',
+                    time: 1,
+                    description: 'Return data and control to application',
+                    operations: [
+                        { label: 'Data Copy', value: 'copy_to_user(buf, kernel_buf, 4096)' },
+                        { label: 'Return Value', value: 'rax = 4096 (bytes read)' },
+                        { label: 'Context Restore', value: 'Kernel → User mode (SYSRET)' }
+                    ],
+                    details: [
+                        { title: 'Result', content: 'Bytes read: <span class="highlight">4096</span>\nErrno: 0 (Success)\nReturn code: 4096' },
+                        { title: 'Total Time', content: 'Elapsed: <span class="highlight">~175μs</span>\nUser: 0μs\nKernel: 175μs' }
+                    ]
+                }
+            ]
+        };
 
-        const layers = [
-            'layer-user',
-            'layer-syscall',
-            'layer-vfs',
-            'layer-fs',
-            'layer-block',
-            'layer-device',
-            'layer-return'
-        ];
+        let currentExecution = null;
+        let currentLayer = -1;
 
-        const flows = [
-            'flow-1',
-            'flow-2',
-            'flow-3',
-            'flow-4',
-            'flow-5',
-            'flow-6'
-        ];
+        // Initialize
+        function init() {
+            renderNavigation();
+            renderVisualization();
+            renderMetrics();
 
-        function executeSystemCall() {
-            if (executionActive) return;
-
-            executionActive = true;
-            currentLayer = 0;
-
-            // Update parameters from input
-            const fd = document.getElementById('fd-input').value;
-            const size = document.getElementById('size-input').value;
-            document.getElementById('param-fd').textContent = fd;
-            document.getElementById('param-count').textContent = size;
-            document.getElementById('result-bytes').textContent = size;
-
-            // Reset all layers
-            layers.forEach(id => {
-                document.getElementById(id).classList.remove('active');
-            });
-            flows.forEach(id => {
-                document.getElementById(id).classList.remove('active');
-            });
-
-            // Start execution sequence
-            executeLayer(0);
+            // Auto-execute on load
+            setTimeout(() => executeSystemCall(), 800);
         }
 
-        function executeLayer(index) {
-            if (index >= layers.length) {
-                executionActive = false;
-                return;
-            }
+        // Render navigation
+        function renderNavigation() {
+            const nav = document.getElementById('nav-items');
+            const layers = kernelLayers.read;
+
+            nav.innerHTML = layers.map((layer, i) => `
+                <div class="nav-item" style="color: ${layer.color}" data-layer="${i}" onmouseenter="highlightLayer(${i})" onmouseleave="unhighlightLayer()">
+                    <div class="nav-indicator"></div>
+                    <div class="nav-label">${layer.name}</div>
+                    <div class="nav-time">${layer.time}μs</div>
+                </div>
+            `).join('');
+        }
+
+        // Render visualization
+        function renderVisualization() {
+            const viz = document.getElementById('viz-content');
+            const layers = kernelLayers.read;
+
+            viz.innerHTML = layers.map((layer, i) => `
+                ${i > 0 ? `
+                    <div class="flow-connector" style="color: ${layer.color}" id="flow-${i}">
+                        <div class="flow-line">
+                            <div class="flow-particles">
+                                <div class="flow-particle"></div>
+                                <div class="flow-particle"></div>
+                                <div class="flow-particle"></div>
+                            </div>
+                        </div>
+                    </div>
+                ` : ''}
+
+                <div class="layer-card" style="color: ${layer.color}" id="layer-${i}"
+                     onmouseenter="showLayerTooltip(${i}, event)" onmouseleave="hideTooltip()">
+                    <div class="layer-header">
+                        <div class="layer-title-group">
+                            <div class="layer-icon">${layer.icon}</div>
+                            <div class="layer-title">${layer.name}</div>
+                        </div>
+                        <div class="layer-badge">${layer.badge}</div>
+                    </div>
+
+                    <div class="layer-details">
+                        ${layer.details.map(detail => `
+                            <div class="detail-section">
+                                <div class="detail-title">${detail.title}</div>
+                                <div class="detail-content">${detail.content}</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Render metrics
+        function renderMetrics() {
+            const fd = document.getElementById('fd-input').value;
+            const size = document.getElementById('size-input').value;
+            const cache = document.getElementById('cache-select').value;
+
+            const cacheRate = cache === 'hot' ? 85 : cache === 'cold' ? 15 : 50;
+            const totalTime = 175 + (cache === 'cold' ? 300 : cache === 'hot' ? -50 : 100);
+
+            const metrics = document.getElementById('metrics-content');
+            metrics.innerHTML = `
+                <div class="metric-card" style="color: var(--success)">
+                    <div class="metric-label">Total Time</div>
+                    <div class="metric-value">${totalTime}μs</div>
+                    <div class="metric-subtext">End-to-end latency</div>
+                </div>
+
+                <div class="metric-card" style="color: var(--accent-primary)">
+                    <div class="metric-label">Bytes Read</div>
+                    <div class="metric-value">${size}</div>
+                    <div class="metric-subtext">From fd ${fd}</div>
+                </div>
+
+                <div class="metric-card" style="color: var(--layer-fs)">
+                    <div class="metric-label">Cache Hit Rate</div>
+                    <div class="metric-value">${cacheRate}%</div>
+                    <div class="metric-subtext">Page cache efficiency</div>
+                </div>
+
+                <div class="metric-card" style="color: var(--layer-device)">
+                    <div class="metric-label">I/O Operations</div>
+                    <div class="metric-value">${Math.ceil((100 - cacheRate) / 100 * 8)}</div>
+                    <div class="metric-subtext">Physical disk reads</div>
+                </div>
+            `;
+
+            // Render performance chart
+            const layers = kernelLayers.read;
+            const chart = document.getElementById('perf-chart-content');
+            const maxTime = Math.max(...layers.map(l => l.time));
+
+            chart.innerHTML = layers.map(layer => {
+                const percent = (layer.time / (maxTime * 1.5)) * 100;
+                return `
+                    <div class="chart-bar" style="color: ${layer.color}">
+                        <div class="chart-bar-label">
+                            <span>${layer.icon} ${layer.name}</span>
+                            <span>${layer.time}μs</span>
+                        </div>
+                        <div class="chart-bar-fill" style="width: ${percent}%"></div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Execute system call
+        function executeSystemCall() {
+            const fd = document.getElementById('fd-input').value;
+            const size = document.getElementById('size-input').value;
+            const syscall = document.getElementById('syscall-select').options[document.getElementById('syscall-select').selectedIndex].text;
+
+            document.getElementById('viz-subtitle').textContent = `Tracing ${syscall.split(' ')[0]}(fd=${fd}, buf, count=${size}) through the kernel`;
+
+            // Reset
+            document.querySelectorAll('.layer-card, .nav-item, .flow-connector').forEach(el => {
+                el.classList.remove('active');
+            });
+
+            renderMetrics();
+
+            // Animate execution
+            animateExecution(0);
+        }
+
+        // Animate execution through layers
+        function animateExecution(index) {
+            const layers = kernelLayers.read;
+            if (index >= layers.length) return;
 
             // Activate current layer
-            document.getElementById(layers[index]).classList.add('active');
+            document.getElementById(`layer-${index}`).classList.add('active');
+            document.querySelector(`.nav-item[data-layer="${index}"]`).classList.add('active');
 
-            // Activate flow to next layer (if exists)
-            if (index < flows.length) {
+            // Activate flow to next layer
+            if (index < layers.length - 1) {
                 setTimeout(() => {
-                    document.getElementById(flows[index]).classList.add('active');
-                }, 300);
+                    document.getElementById(`flow-${index + 1}`).classList.add('active');
+                }, 200);
             }
 
-            // Deactivate previous layer after brief overlap
+            // Deactivate previous layer
             if (index > 0) {
                 setTimeout(() => {
-                    document.getElementById(layers[index - 1]).classList.remove('active');
-                    if (index > 1) {
-                        document.getElementById(flows[index - 2]).classList.remove('active');
-                    }
-                }, 800);
+                    document.getElementById(`layer-${index - 1}`).classList.remove('active');
+                    document.querySelector(`.nav-item[data-layer="${index - 1}"]`).classList.remove('active');
+                }, layers[index].time * 8);
             }
 
             // Move to next layer
-            setTimeout(() => {
-                executeLayer(index + 1);
-            }, 1200);
+            const delay = layers[index].time * 10;
+            setTimeout(() => animateExecution(index + 1), delay);
         }
 
-        // Auto-execute on load for demo
-        window.addEventListener('load', () => {
-            setTimeout(() => {
-                executeSystemCall();
-            }, 1000);
+        // Highlight layer on nav hover
+        function highlightLayer(index) {
+            document.getElementById(`layer-${index}`).style.transform = 'translateX(8px) scale(1.02)';
+        }
+
+        function unhighlightLayer() {
+            document.querySelectorAll('.layer-card').forEach(el => {
+                el.style.transform = '';
+            });
+        }
+
+        // Show tooltip
+        function showLayerTooltip(index, event) {
+            const layer = kernelLayers.read[index];
+            const tooltip = document.getElementById('tooltip');
+
+            tooltip.innerHTML = `
+                <div style="font-weight: 700; margin-bottom: 5px;">${layer.name}</div>
+                <div style="color: var(--text-secondary); font-size: 0.9em;">${layer.description}</div>
+                <div style="margin-top: 8px; font-size: 0.85em; color: var(--text-muted);">
+                    Execution time: <strong>${layer.time}μs</strong>
+                </div>
+            `;
+
+            tooltip.style.left = event.clientX + 15 + 'px';
+            tooltip.style.top = event.clientY + 15 + 'px';
+            tooltip.classList.add('show');
+        }
+
+        function hideTooltip() {
+            document.getElementById('tooltip').classList.remove('show');
+        }
+
+        // Update metrics when parameters change
+        ['fd-input', 'size-input', 'cache-select'].forEach(id => {
+            document.getElementById(id).addEventListener('change', renderMetrics);
         });
+
+        // Initialize on load
+        window.addEventListener('load', init);
     </script>
 </body>
 </html>
