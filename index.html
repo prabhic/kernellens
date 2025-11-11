@@ -12,37 +12,41 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', monospace;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
             background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
             color: #e8eaf6;
             min-height: 100vh;
-            padding: 40px 20px;
-            overflow-x: hidden;
+            padding: 20px;
+            overflow: hidden;
         }
 
         .container {
-            max-width: 1600px;
+            max-width: 1400px;
             margin: 0 auto;
+            height: calc(100vh - 40px);
+            display: flex;
+            flex-direction: column;
         }
 
         .header {
             text-align: center;
-            margin-bottom: 40px;
+            margin-bottom: 20px;
+            flex-shrink: 0;
         }
 
         .header h1 {
-            font-size: 48px;
+            font-size: 36px;
             font-weight: 800;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
-            margin-bottom: 12px;
+            margin-bottom: 6px;
             letter-spacing: -1px;
         }
 
         .header p {
-            font-size: 18px;
+            font-size: 14px;
             color: #9fa8da;
             font-weight: 400;
         }
@@ -51,15 +55,16 @@
         .controls {
             background: rgba(30, 37, 66, 0.6);
             border: 1px solid #283593;
-            border-radius: 16px;
-            padding: 28px;
-            margin-bottom: 50px;
+            border-radius: 12px;
+            padding: 16px 24px;
+            margin-bottom: 20px;
             backdrop-filter: blur(10px);
+            flex-shrink: 0;
         }
 
         .control-row {
             display: flex;
-            gap: 24px;
+            gap: 20px;
             align-items: center;
             flex-wrap: wrap;
             justify-content: center;
@@ -68,11 +73,11 @@
         .control-group {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 8px;
         }
 
         .control-group label {
-            font-size: 14px;
+            font-size: 12px;
             color: #9fa8da;
             font-weight: 600;
             white-space: nowrap;
@@ -82,10 +87,10 @@
         .control-group input {
             background: #1e2542;
             border: 1px solid #3949ab;
-            border-radius: 8px;
-            padding: 10px 14px;
+            border-radius: 6px;
+            padding: 6px 10px;
             color: #e8eaf6;
-            font-size: 14px;
+            font-size: 12px;
             font-family: 'Courier New', monospace;
             outline: none;
             transition: all 0.2s;
@@ -94,252 +99,194 @@
         .control-group select:focus,
         .control-group input:focus {
             border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
         }
 
         .control-group input {
-            width: 110px;
+            width: 80px;
         }
 
         .btn {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             border: none;
-            border-radius: 10px;
-            padding: 12px 32px;
+            border-radius: 8px;
+            padding: 8px 20px;
             color: white;
-            font-size: 15px;
+            font-size: 12px;
             font-weight: 700;
             cursor: pointer;
             transition: all 0.3s;
             text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-left: 20px;
+            letter-spacing: 0.5px;
         }
 
         .btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 12px 30px rgba(102, 126, 234, 0.4);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
         }
 
-        .btn:active {
-            transform: translateY(0);
+        /* Main Visualization Area */
+        .viz-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
         }
 
-        /* Info Box */
-        .info-box {
-            background: rgba(102, 126, 234, 0.08);
-            border: 1px solid rgba(102, 126, 234, 0.3);
-            border-radius: 12px;
-            padding: 20px 24px;
-            margin-bottom: 40px;
-            font-size: 15px;
-            color: #9fa8da;
-            line-height: 1.7;
-            text-align: center;
-        }
-
-        .info-box strong {
-            color: #667eea;
-            font-weight: 700;
-        }
-
-        /* Data Flow Visualization */
+        /* Birds-eye View Flow */
         .flow-container {
             position: relative;
-            padding: 60px 40px;
+            padding: 40px 20px 20px;
             background: rgba(30, 37, 66, 0.4);
             border: 1px solid #283593;
-            border-radius: 16px;
-            margin-bottom: 50px;
-            overflow-x: auto;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            flex-shrink: 0;
         }
 
         .flow-stages {
             display: flex;
             align-items: center;
-            justify-content: space-between;
+            justify-content: center;
+            gap: 12px;
             position: relative;
-            min-width: 1400px;
-            padding: 20px 0;
         }
 
-        /* Data Block - The hero of the visualization */
+        /* Compact Data Block - Birds Eye View */
         .data-block {
             background: linear-gradient(135deg, #1e2542 0%, #252d4a 100%);
-            border: 3px solid #3949ab;
-            border-radius: 16px;
-            padding: 24px;
-            width: 200px;
-            min-height: 180px;
+            border: 2px solid #3949ab;
+            border-radius: 12px;
+            padding: 12px;
+            width: 90px;
+            min-height: 100px;
             position: relative;
-            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
             cursor: pointer;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
         }
 
         .data-block:hover {
-            transform: translateY(-12px) scale(1.05);
+            transform: translateY(-8px) scale(1.08);
             border-color: #667eea;
-            box-shadow: 0 25px 50px rgba(102, 126, 234, 0.5);
+            box-shadow: 0 15px 40px rgba(102, 126, 234, 0.5);
             z-index: 10;
         }
 
         .data-block.active {
             border-color: #4caf50;
-            box-shadow: 0 0 40px rgba(76, 175, 80, 0.8), 0 0 80px rgba(76, 175, 80, 0.4);
+            box-shadow: 0 0 30px rgba(76, 175, 80, 0.8);
             animation: pulse-glow 2s ease-in-out infinite;
+        }
+
+        .data-block.selected {
+            border-color: #ffd700;
+            box-shadow: 0 0 30px rgba(255, 215, 0, 0.6);
         }
 
         @keyframes pulse-glow {
             0%, 100% {
-                box-shadow: 0 0 40px rgba(76, 175, 80, 0.8), 0 0 80px rgba(76, 175, 80, 0.4);
+                box-shadow: 0 0 30px rgba(76, 175, 80, 0.8);
                 transform: scale(1);
             }
             50% {
-                box-shadow: 0 0 60px rgba(76, 175, 80, 1), 0 0 120px rgba(76, 175, 80, 0.6);
-                transform: scale(1.03);
+                box-shadow: 0 0 45px rgba(76, 175, 80, 1);
+                transform: scale(1.05);
             }
         }
 
-        .data-block-title {
-            font-size: 11px;
+        .data-icon {
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+
+        .data-label {
+            font-size: 9px;
             color: #5c6bc0;
             text-transform: uppercase;
-            letter-spacing: 1.5px;
+            letter-spacing: 0.5px;
             font-weight: 800;
-            margin-bottom: 16px;
-            text-align: center;
-            border-bottom: 1px solid #3949ab;
-            padding-bottom: 8px;
+            margin-bottom: 8px;
         }
 
-        .data-content {
-            font-size: 14px;
-            color: #e8eaf6;
-            line-height: 1.8;
-        }
-
-        .data-field {
-            display: flex;
-            justify-content: space-between;
-            align-items: baseline;
-            margin-bottom: 10px;
-            padding: 6px 0;
-            border-bottom: 1px solid rgba(57, 73, 171, 0.3);
-        }
-
-        .data-field:last-child {
-            border-bottom: none;
-        }
-
-        .data-field-key {
-            color: #9fa8da;
-            font-weight: 600;
-            font-size: 12px;
-        }
-
-        .data-field-value {
+        .data-key-value {
+            font-size: 11px;
             color: #4caf50;
-            font-weight: 700;
             font-family: 'Courier New', monospace;
-            font-size: 13px;
+            font-weight: 700;
         }
 
-        /* Transformation Arrow - The engine */
+        /* Transformation Arrow - Compact */
         .transform-arrow {
             position: relative;
-            width: 80px;
-            height: 4px;
+            width: 40px;
+            height: 2px;
             background: linear-gradient(90deg, #3949ab 0%, #5c6bc0 100%);
-            opacity: 0.5;
-            transition: all 0.5s;
+            opacity: 0.4;
+            transition: all 0.4s;
             flex-shrink: 0;
         }
 
         .transform-arrow.active {
             opacity: 1;
             background: linear-gradient(90deg, #667eea 0%, #4caf50 100%);
-            box-shadow: 0 0 30px rgba(76, 175, 80, 0.8);
-            animation: flow-pulse 1.5s ease-in-out infinite;
-        }
-
-        @keyframes flow-pulse {
-            0%, 100% {
-                opacity: 1;
-            }
-            50% {
-                opacity: 0.7;
-            }
+            box-shadow: 0 0 20px rgba(76, 175, 80, 0.8);
+            height: 3px;
         }
 
         .transform-arrow::after {
             content: '';
             position: absolute;
-            right: -10px;
-            top: -6px;
+            right: -6px;
+            top: -3px;
             width: 0;
             height: 0;
-            border-left: 10px solid #5c6bc0;
-            border-top: 8px solid transparent;
-            border-bottom: 8px solid transparent;
-            transition: all 0.5s;
+            border-left: 6px solid #5c6bc0;
+            border-top: 4px solid transparent;
+            border-bottom: 4px solid transparent;
+            transition: all 0.4s;
         }
 
         .transform-arrow.active::after {
             border-left-color: #4caf50;
         }
 
-        /* Transformation Engine Label */
-        .transform-engine {
+        .transform-label {
             position: absolute;
             bottom: 100%;
             left: 50%;
-            transform: translateX(-50%) translateY(-12px);
-            background: rgba(102, 126, 234, 0.15);
-            border: 1px solid #667eea;
-            border-radius: 8px;
-            padding: 6px 14px;
-            font-size: 10px;
+            transform: translateX(-50%) translateY(-8px);
+            font-size: 8px;
             color: #667eea;
             text-transform: uppercase;
-            letter-spacing: 1px;
-            font-weight: 800;
+            letter-spacing: 0.5px;
+            font-weight: 700;
             white-space: nowrap;
             opacity: 0;
             transition: all 0.3s;
             pointer-events: none;
         }
 
-        .transform-arrow:hover .transform-engine {
+        .transform-arrow:hover .transform-label {
             opacity: 1;
-            transform: translateX(-50%) translateY(-8px);
         }
 
-        .transform-arrow.active .transform-engine {
+        .transform-arrow.active .transform-label {
             opacity: 1;
             color: #4caf50;
-            border-color: #4caf50;
-            background: rgba(76, 175, 80, 0.15);
         }
 
         /* Flow Particles */
-        .flow-particles {
-            position: absolute;
-            top: 50%;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            transform: translateY(-50%);
-            pointer-events: none;
-        }
-
         .flow-particle {
             position: absolute;
-            width: 8px;
-            height: 8px;
+            width: 6px;
+            height: 6px;
             background: #4caf50;
             border-radius: 50%;
-            box-shadow: 0 0 15px rgba(76, 175, 80, 0.9);
+            box-shadow: 0 0 10px rgba(76, 175, 80, 0.9);
             opacity: 0;
             left: 0;
             top: 50%;
@@ -347,27 +294,23 @@
         }
 
         .transform-arrow.active .flow-particle {
-            animation: particle-flow 2s ease-in-out infinite;
+            animation: particle-flow 1.5s ease-in-out infinite;
         }
 
         @keyframes particle-flow {
             0% {
                 opacity: 0;
                 left: 0;
-                transform: translateY(-50%) scale(0.3);
             }
-            15% {
+            20% {
                 opacity: 1;
-                transform: translateY(-50%) scale(1);
             }
-            85% {
+            80% {
                 opacity: 1;
-                transform: translateY(-50%) scale(1);
             }
             100% {
                 opacity: 0;
                 left: 100%;
-                transform: translateY(-50%) scale(0.3);
             }
         }
 
@@ -375,167 +318,170 @@
             animation-delay: 0.5s;
         }
 
-        .flow-particle:nth-child(3) {
-            animation-delay: 1s;
-        }
-
-        /* Tooltip */
-        .tooltip {
-            position: absolute;
-            bottom: calc(100% + 15px);
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(15, 15, 35, 0.98);
-            border: 2px solid #667eea;
-            border-radius: 12px;
-            padding: 16px 20px;
-            font-size: 13px;
-            color: #e8eaf6;
-            min-width: 250px;
-            opacity: 0;
-            pointer-events: none;
-            transition: all 0.3s;
-            z-index: 100;
-            line-height: 1.6;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
-        }
-
-        .data-block:hover .tooltip {
-            opacity: 1;
-            bottom: calc(100% + 10px);
-        }
-
-        .tooltip::after {
-            content: '';
-            position: absolute;
-            top: 100%;
-            left: 50%;
-            transform: translateX(-50%);
-            border: 8px solid transparent;
-            border-top-color: #667eea;
-        }
-
-        .tooltip-title {
-            font-weight: 700;
-            margin-bottom: 6px;
-            color: #667eea;
-            font-size: 14px;
-        }
-
-        .tooltip-text {
-            color: #9fa8da;
-            font-size: 12px;
-        }
-
-        /* Detailed View */
-        .detailed-view {
-            background: rgba(30, 37, 66, 0.6);
-            border: 1px solid #283593;
-            border-radius: 16px;
-            padding: 40px;
-            backdrop-filter: blur(10px);
-        }
-
-        .detailed-view h3 {
-            font-size: 24px;
-            color: #667eea;
-            margin-bottom: 30px;
-            font-weight: 700;
-            text-align: center;
-        }
-
-        .transformation-steps {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-            gap: 24px;
-        }
-
-        .step-card {
-            background: linear-gradient(135deg, #1e2542 0%, #252d4a 100%);
+        /* Detail Panel - Appears when clicking a block */
+        .detail-panel {
+            background: rgba(30, 37, 66, 0.95);
             border: 2px solid #3949ab;
             border-radius: 12px;
             padding: 24px;
-            transition: all 0.3s;
+            flex: 1;
+            overflow-y: auto;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.4s;
+            pointer-events: none;
         }
 
-        .step-card:hover {
-            border-color: #667eea;
-            box-shadow: 0 12px 35px rgba(102, 126, 234, 0.3);
-            transform: translateY(-5px);
+        .detail-panel.visible {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: all;
         }
 
-        .step-card h4 {
-            font-size: 16px;
-            color: #4caf50;
+        .detail-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #3949ab;
+        }
+
+        .detail-icon {
+            font-size: 32px;
+        }
+
+        .detail-title {
+            flex: 1;
+        }
+
+        .detail-title h3 {
+            font-size: 20px;
+            color: #667eea;
+            margin-bottom: 4px;
+        }
+
+        .detail-title p {
+            font-size: 12px;
+            color: #9fa8da;
+        }
+
+        .detail-close {
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            border-radius: 6px;
+            padding: 6px 12px;
+            color: #e8eaf6;
+            font-size: 11px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .detail-close:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .detail-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 16px;
+        }
+
+        .detail-section {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid #3949ab;
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .detail-section h4 {
+            font-size: 12px;
+            color: #5c6bc0;
+            text-transform: uppercase;
+            letter-spacing: 1px;
             margin-bottom: 12px;
             font-weight: 700;
         }
 
-        .step-card p {
+        .detail-field {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
             font-size: 13px;
-            color: #9fa8da;
-            line-height: 1.7;
-            margin-bottom: 14px;
+            line-height: 1.6;
         }
 
-        .step-card code {
-            display: block;
+        .detail-field-key {
+            color: #9fa8da;
+            font-weight: 600;
+        }
+
+        .detail-field-value {
+            color: #4caf50;
+            font-family: 'Courier New', monospace;
+            font-weight: 700;
+        }
+
+        .detail-code {
             background: #0f0f23;
             border: 1px solid #283593;
             border-radius: 6px;
             padding: 12px;
-            font-size: 12px;
+            font-size: 11px;
             color: #e8eaf6;
-            overflow-x: auto;
             font-family: 'Courier New', monospace;
             line-height: 1.5;
+            overflow-x: auto;
+            margin-top: 12px;
+        }
+
+        /* Placeholder when no block selected */
+        .detail-placeholder {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: #5c6bc0;
+            text-align: center;
+        }
+
+        .detail-placeholder-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+
+        .detail-placeholder-text {
+            font-size: 14px;
+            color: #9fa8da;
         }
 
         /* Responsive */
-        @media (max-width: 1500px) {
+        @media (max-width: 1200px) {
             .flow-stages {
-                min-width: auto;
                 flex-wrap: wrap;
-                gap: 30px;
-                justify-content: center;
+                gap: 20px;
             }
 
             .transform-arrow {
-                transform: rotate(90deg);
-                width: 60px;
-            }
-
-            .transform-engine {
-                transform: translateX(-50%) translateY(-12px) rotate(-90deg);
-            }
-
-            .transform-arrow:hover .transform-engine {
-                transform: translateX(-50%) translateY(-8px) rotate(-90deg);
+                display: none;
             }
         }
 
         @media (max-width: 768px) {
             .header h1 {
-                font-size: 36px;
+                font-size: 28px;
             }
 
             .control-row {
                 flex-direction: column;
-                gap: 16px;
-            }
-
-            .btn {
-                margin-left: 0;
-                width: 100%;
+                gap: 12px;
             }
 
             .data-block {
-                width: 100%;
-                max-width: 300px;
-            }
-
-            .flow-container {
-                padding: 40px 20px;
+                width: 80px;
+                min-height: 90px;
             }
         }
     </style>
@@ -544,13 +490,7 @@
     <div class="container">
         <div class="header">
             <h1>🔍 Kernel Lens</h1>
-            <p>Watch data transform through the kernel - See abstractions dissolve into reality</p>
-        </div>
-
-        <div class="info-box">
-            <strong>How it works:</strong> This visualizes how your system call data transforms as it flows through the Linux kernel.
-            Each block shows the actual data structure at that stage. Hover over blocks to understand what they represent.
-            Watch the data flow from user space all the way to the hardware and back.
+            <p>Click any stage to see how data transforms through the kernel</p>
         </div>
 
         <div class="controls">
@@ -582,308 +522,316 @@
                     </select>
                 </div>
 
-                <button class="btn" onclick="executeFlow()">▶ Execute Flow</button>
+                <button class="btn" onclick="executeFlow()">▶ Execute</button>
             </div>
         </div>
 
-        <div class="flow-container">
-            <div class="flow-stages" id="flowStages">
-                <!-- Stage 1: User Input -->
-                <div class="data-block" data-stage="0">
-                    <div class="tooltip">
-                        <div class="tooltip-title">User Space Parameters</div>
-                        <div class="tooltip-text">Application provides file descriptor, buffer pointer, and size before making the system call</div>
+        <div class="viz-area">
+            <div class="flow-container">
+                <div class="flow-stages" id="flowStages">
+                    <!-- Stage 1: User Input -->
+                    <div class="data-block" data-stage="0" onclick="selectStage(0)">
+                        <div class="data-icon">👤</div>
+                        <div class="data-label">User</div>
+                        <div class="data-key-value" id="user-fd-compact">fd:3</div>
                     </div>
-                    <div class="data-block-title">User Input</div>
-                    <div class="data-content">
-                        <div class="data-field">
-                            <span class="data-field-key">fd:</span>
-                            <span class="data-field-value" id="user-fd">3</span>
-                        </div>
-                        <div class="data-field">
-                            <span class="data-field-key">buf:</span>
-                            <span class="data-field-value">0x7fff…</span>
-                        </div>
-                        <div class="data-field">
-                            <span class="data-field-key">size:</span>
-                            <span class="data-field-value" id="user-size">4096</span>
-                        </div>
-                    </div>
-                </div>
 
-                <div class="transform-arrow" data-arrow="0">
-                    <div class="transform-engine">SYSCALL</div>
-                    <div class="flow-particles">
-                        <div class="flow-particle"></div>
+                    <div class="transform-arrow" data-arrow="0">
+                        <div class="transform-label">SYSCALL</div>
                         <div class="flow-particle"></div>
                         <div class="flow-particle"></div>
                     </div>
-                </div>
 
-                <!-- Stage 2: Kernel Request -->
-                <div class="data-block" data-stage="1">
-                    <div class="tooltip">
-                        <div class="tooltip-title">Kernel Request</div>
-                        <div class="tooltip-text">User parameters are packaged into kernel structures. CPU switches from Ring 3 to Ring 0 (kernel mode)</div>
+                    <!-- Stage 2: Kernel -->
+                    <div class="data-block" data-stage="1" onclick="selectStage(1)">
+                        <div class="data-icon">🚪</div>
+                        <div class="data-label">Kernel</div>
+                        <div class="data-key-value">ring:0</div>
                     </div>
-                    <div class="data-block-title">Kernel Request</div>
-                    <div class="data-content">
-                        <div class="data-field">
-                            <span class="data-field-key">syscall:</span>
-                            <span class="data-field-value" id="kern-syscall">read</span>
-                        </div>
-                        <div class="data-field">
-                            <span class="data-field-key">ring:</span>
-                            <span class="data-field-value">0</span>
-                        </div>
-                        <div class="data-field">
-                            <span class="data-field-key">pid:</span>
-                            <span class="data-field-value">1234</span>
-                        </div>
-                    </div>
-                </div>
 
-                <div class="transform-arrow" data-arrow="1">
-                    <div class="transform-engine">VFS LOOKUP</div>
-                    <div class="flow-particles">
-                        <div class="flow-particle"></div>
+                    <div class="transform-arrow" data-arrow="1">
+                        <div class="transform-label">VFS</div>
                         <div class="flow-particle"></div>
                         <div class="flow-particle"></div>
                     </div>
-                </div>
 
-                <!-- Stage 3: File Object -->
-                <div class="data-block" data-stage="2">
-                    <div class="tooltip">
-                        <div class="tooltip-title">File Object</div>
-                        <div class="tooltip-text">VFS resolves file descriptor to actual file structure containing path, inode, and position</div>
+                    <!-- Stage 3: File -->
+                    <div class="data-block" data-stage="2" onclick="selectStage(2)">
+                        <div class="data-icon">📂</div>
+                        <div class="data-label">File</div>
+                        <div class="data-key-value">/etc/…</div>
                     </div>
-                    <div class="data-block-title">File Object</div>
-                    <div class="data-content">
-                        <div class="data-field">
-                            <span class="data-field-key">path:</span>
-                            <span class="data-field-value">/etc/passwd</span>
-                        </div>
-                        <div class="data-field">
-                            <span class="data-field-key">mode:</span>
-                            <span class="data-field-value">r--</span>
-                        </div>
-                        <div class="data-field">
-                            <span class="data-field-key">pos:</span>
-                            <span class="data-field-value">0</span>
-                        </div>
-                    </div>
-                </div>
 
-                <div class="transform-arrow" data-arrow="2">
-                    <div class="transform-engine">FS RESOLVE</div>
-                    <div class="flow-particles">
-                        <div class="flow-particle"></div>
+                    <div class="transform-arrow" data-arrow="2">
+                        <div class="transform-label">FS</div>
                         <div class="flow-particle"></div>
                         <div class="flow-particle"></div>
                     </div>
-                </div>
 
-                <!-- Stage 4: Inode & Blocks -->
-                <div class="data-block" data-stage="3">
-                    <div class="tooltip">
-                        <div class="tooltip-title">Inode & Blocks</div>
-                        <div class="tooltip-text">Filesystem (ext4) maps the file to inode number and physical block addresses on disk</div>
+                    <!-- Stage 4: Inode -->
+                    <div class="data-block" data-stage="3" onclick="selectStage(3)">
+                        <div class="data-icon">💾</div>
+                        <div class="data-label">Inode</div>
+                        <div class="data-key-value" id="cache-status-compact">HIT</div>
                     </div>
-                    <div class="data-block-title">Inode & Blocks</div>
-                    <div class="data-content">
-                        <div class="data-field">
-                            <span class="data-field-key">inode:</span>
-                            <span class="data-field-value">524288</span>
-                        </div>
-                        <div class="data-field">
-                            <span class="data-field-key">blocks:</span>
-                            <span class="data-field-value">[12M…]</span>
-                        </div>
-                        <div class="data-field">
-                            <span class="data-field-key">cache:</span>
-                            <span class="data-field-value" id="cache-status">HIT</span>
-                        </div>
-                    </div>
-                </div>
 
-                <div class="transform-arrow" data-arrow="3">
-                    <div class="transform-engine">BLOCK I/O</div>
-                    <div class="flow-particles">
-                        <div class="flow-particle"></div>
+                    <div class="transform-arrow" data-arrow="3">
+                        <div class="transform-label">BLOCK</div>
                         <div class="flow-particle"></div>
                         <div class="flow-particle"></div>
                     </div>
-                </div>
 
-                <!-- Stage 5: Disk I/O -->
-                <div class="data-block" data-stage="4">
-                    <div class="tooltip">
-                        <div class="tooltip-title">Disk I/O Request</div>
-                        <div class="tooltip-text">Block layer creates I/O request with sector number and schedules it for device driver</div>
+                    <!-- Stage 5: I/O -->
+                    <div class="data-block" data-stage="4" onclick="selectStage(4)">
+                        <div class="data-icon">⚙️</div>
+                        <div class="data-label">I/O</div>
+                        <div class="data-key-value" id="io-ops-compact">1 op</div>
                     </div>
-                    <div class="data-block-title">Disk I/O</div>
-                    <div class="data-content">
-                        <div class="data-field">
-                            <span class="data-field-key">sector:</span>
-                            <span class="data-field-value">24576</span>
-                        </div>
-                        <div class="data-field">
-                            <span class="data-field-key">ops:</span>
-                            <span class="data-field-value" id="io-ops">1</span>
-                        </div>
-                        <div class="data-field">
-                            <span class="data-field-key">DMA:</span>
-                            <span class="data-field-value">active</span>
-                        </div>
-                    </div>
-                </div>
 
-                <div class="transform-arrow" data-arrow="4">
-                    <div class="transform-engine">DATA COPY</div>
-                    <div class="flow-particles">
-                        <div class="flow-particle"></div>
+                    <div class="transform-arrow" data-arrow="4">
+                        <div class="transform-label">DMA</div>
                         <div class="flow-particle"></div>
                         <div class="flow-particle"></div>
                     </div>
-                </div>
 
-                <!-- Stage 6: Raw Data -->
-                <div class="data-block" data-stage="5">
-                    <div class="tooltip">
-                        <div class="tooltip-title">Raw File Content</div>
-                        <div class="tooltip-text">Actual file bytes retrieved from disk (or page cache) ready to be copied to user buffer</div>
+                    <!-- Stage 6: Data -->
+                    <div class="data-block" data-stage="5" onclick="selectStage(5)">
+                        <div class="data-icon">📦</div>
+                        <div class="data-label">Data</div>
+                        <div class="data-key-value" id="data-bytes-compact">4KB</div>
                     </div>
-                    <div class="data-block-title">Raw Data</div>
-                    <div class="data-content">
-                        <div class="data-field">
-                            <span class="data-field-key">bytes:</span>
-                            <span class="data-field-value" id="data-bytes">4096</span>
-                        </div>
-                        <div class="data-field">
-                            <span class="data-field-key">data:</span>
-                            <span class="data-field-value">"root:x…"</span>
-                        </div>
-                        <div class="data-field">
-                            <span class="data-field-key">valid:</span>
-                            <span class="data-field-value">✓</span>
-                        </div>
-                    </div>
-                </div>
 
-                <div class="transform-arrow" data-arrow="5">
-                    <div class="transform-engine">RETURN</div>
-                    <div class="flow-particles">
-                        <div class="flow-particle"></div>
+                    <div class="transform-arrow" data-arrow="5">
+                        <div class="transform-label">RETURN</div>
                         <div class="flow-particle"></div>
                         <div class="flow-particle"></div>
                     </div>
-                </div>
 
-                <!-- Stage 7: User Result -->
-                <div class="data-block" data-stage="6">
-                    <div class="tooltip">
-                        <div class="tooltip-title">User Result</div>
-                        <div class="tooltip-text">Data copied to user buffer, control returns to application (Ring 0 → Ring 3)</div>
-                    </div>
-                    <div class="data-block-title">User Result</div>
-                    <div class="data-content">
-                        <div class="data-field">
-                            <span class="data-field-key">return:</span>
-                            <span class="data-field-value" id="result-bytes">4096</span>
-                        </div>
-                        <div class="data-field">
-                            <span class="data-field-key">errno:</span>
-                            <span class="data-field-value">0</span>
-                        </div>
-                        <div class="data-field">
-                            <span class="data-field-key">time:</span>
-                            <span class="data-field-value" id="result-time">125μs</span>
-                        </div>
+                    <!-- Stage 7: Result -->
+                    <div class="data-block" data-stage="6" onclick="selectStage(6)">
+                        <div class="data-icon">↩️</div>
+                        <div class="data-label">Result</div>
+                        <div class="data-key-value" id="result-time-compact">125μs</div>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <div class="detailed-view">
-            <h3>📖 Data Transformation Details</h3>
-            <div class="transformation-steps">
-                <div class="step-card">
-                    <h4>1. User → Kernel (SYSCALL)</h4>
-                    <p>User space parameters (fd, buffer, size) are packaged into a system call. The CPU switches from Ring 3 to Ring 0, and control transfers to the kernel.</p>
-                    <code>ssize_t read(int fd, void *buf, size_t count);</code>
-                </div>
-
-                <div class="step-card">
-                    <h4>2. Kernel Request (VFS LOOKUP)</h4>
-                    <p>The Virtual File System (VFS) resolves the file descriptor from the process's fd table to locate the actual file structure pointer.</p>
-                    <code>struct file *file = fdt->fd[fd];</code>
-                </div>
-
-                <div class="step-card">
-                    <h4>3. File Object (FS RESOLVE)</h4>
-                    <p>The file structure contains metadata (path, permissions, position). The filesystem (ext4) uses this to find the inode and block addresses.</p>
-                    <code>struct inode *inode = file->f_inode;</code>
-                </div>
-
-                <div class="step-card">
-                    <h4>4. Inode & Blocks (BLOCK I/O)</h4>
-                    <p>The inode contains extent tree mapping logical blocks to physical blocks. The page cache is checked first (cache hit avoids disk I/O).</p>
-                    <code>page = find_get_page(mapping, index);</code>
-                </div>
-
-                <div class="step-card">
-                    <h4>5. Disk I/O (DATA COPY)</h4>
-                    <p>If cache miss, the block layer creates a BIO request, schedules it, and uses DMA to transfer data from disk to kernel memory.</p>
-                    <code>submit_bio(READ, bio);</code>
-                </div>
-
-                <div class="step-card">
-                    <h4>6. Raw Data (RETURN)</h4>
-                    <p>The file content is now in kernel memory (page cache). It needs to be copied to the user space buffer safely (copy_to_user checks permissions).</p>
-                    <code>copy_to_user(buf, page_address(page), count);</code>
-                </div>
-
-                <div class="step-card">
-                    <h4>7. User Result</h4>
-                    <p>Control returns to user space (Ring 0 → Ring 3). The return value indicates bytes read, and errno is set to 0 (success).</p>
-                    <code>return count; // 4096 bytes</code>
+            <div class="detail-panel" id="detailPanel">
+                <div class="detail-placeholder">
+                    <div class="detail-placeholder-icon">👆</div>
+                    <div class="detail-placeholder-text">Click any data block above to see detailed transformation info</div>
                 </div>
             </div>
         </div>
     </div>
 
     <script>
+        const stageData = {
+            0: {
+                icon: '👤',
+                title: 'User Space Input',
+                description: 'Application initiates system call with parameters',
+                fields: [
+                    { section: 'Parameters', key: 'File Descriptor', value: '3' },
+                    { section: 'Parameters', key: 'Buffer Pointer', value: '0x7fff00001000' },
+                    { section: 'Parameters', key: 'Size', value: '4096 bytes' },
+                    { section: 'Context', key: 'Ring Level', value: '3 (User)' },
+                    { section: 'Context', key: 'Process ID', value: '1234' },
+                    { section: 'Context', key: 'CPU Mode', value: 'User mode' }
+                ],
+                code: 'ssize_t bytes = read(fd, buffer, count);'
+            },
+            1: {
+                icon: '🚪',
+                title: 'System Call Interface',
+                description: 'Transition from user to kernel space',
+                fields: [
+                    { section: 'Transition', key: 'System Call', value: 'read (syscall #0)' },
+                    { section: 'Transition', key: 'Ring Switch', value: '3 → 0' },
+                    { section: 'Transition', key: 'Mode', value: 'Kernel mode' },
+                    { section: 'Execution', key: 'Handler', value: 'sys_read()' },
+                    { section: 'Execution', key: 'Time', value: '~1μs' },
+                    { section: 'Execution', key: 'Context Switches', value: '+1' }
+                ],
+                code: 'SYSCALL_DEFINE3(read, unsigned int, fd,\n    char __user *, buf, size_t, count)'
+            },
+            2: {
+                icon: '📂',
+                title: 'File Object (VFS)',
+                description: 'Virtual File System resolves file descriptor',
+                fields: [
+                    { section: 'Resolution', key: 'FD Lookup', value: 'fdget_pos(3)' },
+                    { section: 'Resolution', key: 'File Path', value: '/etc/passwd' },
+                    { section: 'File Info', key: 'Inode', value: '524288' },
+                    { section: 'File Info', key: 'Mode', value: 'r-- (read-only)' },
+                    { section: 'File Info', key: 'Position', value: '0' },
+                    { section: 'File Info', key: 'Size', value: '2148 bytes' }
+                ],
+                code: 'struct file *file = fdt->fd[fd];\nstruct inode *inode = file->f_inode;'
+            },
+            3: {
+                icon: '💾',
+                title: 'Inode & Blocks (ext4)',
+                description: 'Filesystem maps file to physical blocks',
+                fields: [
+                    { section: 'Inode', key: 'Inode Number', value: '524288' },
+                    { section: 'Inode', key: 'Block Count', value: '8 blocks' },
+                    { section: 'Mapping', key: 'Logical Block', value: '0' },
+                    { section: 'Mapping', key: 'Physical Block', value: '12345678' },
+                    { section: 'Cache', key: 'Page Cache', value: 'HIT (85%)' },
+                    { section: 'Cache', key: 'Pages Cached', value: '6/8 blocks' }
+                ],
+                code: 'page = find_get_page(mapping, index);\nif (!page) submit_bio(READ, bio);'
+            },
+            4: {
+                icon: '⚙️',
+                title: 'Block I/O Layer',
+                description: 'Block device I/O scheduling and execution',
+                fields: [
+                    { section: 'Request', key: 'Sector', value: '24576' },
+                    { section: 'Request', key: 'Operations', value: '1 read' },
+                    { section: 'Request', key: 'Size', value: '4096 bytes' },
+                    { section: 'Scheduling', key: 'Scheduler', value: 'mq-deadline' },
+                    { section: 'Scheduling', key: 'Queue Depth', value: '12/32' },
+                    { section: 'Scheduling', key: 'Wait Time', value: '~10μs' }
+                ],
+                code: 'struct bio *bio = bio_alloc(sector, size);\nsubmit_bio(READ, bio);'
+            },
+            5: {
+                icon: '📦',
+                title: 'Raw Data',
+                description: 'Actual file content retrieved from storage',
+                fields: [
+                    { section: 'Data', key: 'Bytes Read', value: '4096' },
+                    { section: 'Data', key: 'Content Preview', value: 'root:x:0:0:root...' },
+                    { section: 'Data', key: 'Validation', value: '✓ Valid' },
+                    { section: 'Transfer', key: 'DMA Active', value: 'Yes' },
+                    { section: 'Transfer', key: 'Memory Addr', value: '0xffff88001234000' },
+                    { section: 'Transfer', key: 'IRQ', value: '45 (complete)' }
+                ],
+                code: 'copy_to_user(buf, page_address(page), count);'
+            },
+            6: {
+                icon: '↩️',
+                title: 'Return to User',
+                description: 'Data and control returned to application',
+                fields: [
+                    { section: 'Result', key: 'Return Value', value: '4096 bytes' },
+                    { section: 'Result', key: 'Error Code', value: '0 (Success)' },
+                    { section: 'Result', key: 'Total Time', value: '125μs' },
+                    { section: 'Transition', key: 'Ring Switch', value: '0 → 3' },
+                    { section: 'Transition', key: 'CPU Mode', value: 'Back to user' },
+                    { section: 'Transition', key: 'Instruction', value: 'SYSRET' }
+                ],
+                code: 'return count; // Returns to userspace'
+            }
+        };
+
         let currentStage = -1;
+        let selectedStage = null;
         let animationInterval = null;
 
         function updateParameters() {
             const fd = document.getElementById('fd').value;
             const size = document.getElementById('size').value;
             const cache = document.getElementById('cache').value;
-            const syscall = document.getElementById('syscall').value;
 
-            // Update displayed values
-            document.getElementById('user-fd').textContent = fd;
-            document.getElementById('user-size').textContent = size;
-            document.getElementById('kern-syscall').textContent = syscall;
-            document.getElementById('data-bytes').textContent = size;
-            document.getElementById('result-bytes').textContent = size;
+            // Update compact display
+            document.getElementById('user-fd-compact').textContent = `fd:${fd}`;
+            document.getElementById('cache-status-compact').textContent = cache === 'hot' ? 'HIT' : 'MISS';
 
-            // Update cache status
-            const cacheStatus = cache === 'hot' ? 'HIT' : 'MISS';
-            document.getElementById('cache-status').textContent = cacheStatus;
-
-            // Calculate I/O operations based on size
             const ioOps = cache === 'hot' ? 0 : Math.ceil(size / 4096);
-            document.getElementById('io-ops').textContent = ioOps;
+            document.getElementById('io-ops-compact').textContent = ioOps === 0 ? 'cached' : `${ioOps} op${ioOps > 1 ? 's' : ''}`;
 
-            // Calculate approximate time
-            const baseTime = 125; // microseconds
-            const diskTime = cache === 'hot' ? 0 : ioOps * 8000; // 8ms per disk I/O
+            const sizeKB = size >= 1024 ? (size / 1024).toFixed(0) + 'KB' : size + 'B';
+            document.getElementById('data-bytes-compact').textContent = sizeKB;
+
+            const baseTime = 125;
+            const diskTime = cache === 'hot' ? 0 : ioOps * 8000;
             const totalTime = baseTime + diskTime;
             const timeStr = totalTime < 1000 ? totalTime + 'μs' : (totalTime / 1000).toFixed(1) + 'ms';
-            document.getElementById('result-time').textContent = timeStr;
+            document.getElementById('result-time-compact').textContent = timeStr;
+
+            // Update stage data
+            stageData[0].fields[0].value = fd;
+            stageData[0].fields[2].value = size + ' bytes';
+            stageData[3].fields[4].value = cache === 'hot' ? 'HIT (85%)' : 'MISS (15%)';
+            stageData[4].fields[1].value = ioOps + ' read' + (ioOps !== 1 ? 's' : '');
+            stageData[5].fields[0].value = size;
+            stageData[6].fields[0].value = size + ' bytes';
+            stageData[6].fields[2].value = timeStr;
+        }
+
+        function selectStage(stage) {
+            // Remove previous selection
+            document.querySelectorAll('.data-block').forEach(block => {
+                block.classList.remove('selected');
+            });
+
+            // Mark new selection
+            document.querySelector(`[data-stage="${stage}"]`).classList.add('selected');
+            selectedStage = stage;
+
+            // Show detail panel
+            showDetailPanel(stage);
+        }
+
+        function showDetailPanel(stage) {
+            const panel = document.getElementById('detailPanel');
+            const data = stageData[stage];
+
+            // Group fields by section
+            const sections = {};
+            data.fields.forEach(field => {
+                if (!sections[field.section]) {
+                    sections[field.section] = [];
+                }
+                sections[field.section].push(field);
+            });
+
+            // Build HTML
+            let sectionsHTML = '';
+            for (const [sectionName, fields] of Object.entries(sections)) {
+                sectionsHTML += `
+                    <div class="detail-section">
+                        <h4>${sectionName}</h4>
+                        ${fields.map(f => `
+                            <div class="detail-field">
+                                <span class="detail-field-key">${f.key}:</span>
+                                <span class="detail-field-value">${f.value}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            }
+
+            panel.innerHTML = `
+                <div class="detail-header">
+                    <div class="detail-icon">${data.icon}</div>
+                    <div class="detail-title">
+                        <h3>${data.title}</h3>
+                        <p>${data.description}</p>
+                    </div>
+                    <button class="detail-close" onclick="closeDetailPanel()">Close</button>
+                </div>
+                <div class="detail-content">
+                    ${sectionsHTML}
+                </div>
+                <div class="detail-code">${data.code}</div>
+            `;
+
+            panel.classList.add('visible');
+        }
+
+        function closeDetailPanel() {
+            const panel = document.getElementById('detailPanel');
+            panel.classList.remove('visible');
+
+            document.querySelectorAll('.data-block').forEach(block => {
+                block.classList.remove('selected');
+            });
+
+            selectedStage = null;
         }
 
         function executeFlow() {
@@ -912,7 +860,7 @@
             // Remove active class from previous stage
             if (currentStage >= 0) {
                 const prevBlock = document.querySelector(`[data-stage="${currentStage}"]`);
-                if (prevBlock) {
+                if (prevBlock && !prevBlock.classList.contains('selected')) {
                     prevBlock.classList.remove('active');
                 }
                 if (currentStage > 0) {
@@ -942,11 +890,11 @@
                 }
 
                 // Schedule next stage
-                animationInterval = setTimeout(animateNextStage, 1000);
+                animationInterval = setTimeout(animateNextStage, 800);
             } else {
                 // Animation complete - keep last block active
                 const lastBlock = document.querySelector('[data-stage="6"]');
-                if (lastBlock) {
+                if (lastBlock && !lastBlock.classList.contains('selected')) {
                     lastBlock.classList.add('active');
                 }
             }
@@ -954,14 +902,17 @@
 
         // Auto-execute on page load
         window.addEventListener('load', () => {
-            setTimeout(executeFlow, 600);
+            updateParameters();
+            setTimeout(executeFlow, 500);
         });
 
         // Update parameters when changed
-        document.getElementById('fd').addEventListener('change', updateParameters);
-        document.getElementById('size').addEventListener('change', updateParameters);
-        document.getElementById('cache').addEventListener('change', updateParameters);
-        document.getElementById('syscall').addEventListener('change', updateParameters);
+        ['fd', 'size', 'cache', 'syscall'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) {
+                el.addEventListener('change', updateParameters);
+            }
+        });
     </script>
 </body>
 </html>
