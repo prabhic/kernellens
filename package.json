@@ -1,0 +1,19 @@
+{
+  "name": "kernellens",
+  "version": "1.0.0",
+  "description": "**Cinematic interactive visualization of Linux kernel internal execution**",
+  "main": "kernel-lens.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "http://local_proxy@127.0.0.1:22963/git/prabhic/kernellens"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "playwright": "^1.56.1"
+  }
+}
