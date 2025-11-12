@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kernel Lens - Modern Stack (D3 + PixiJS)</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/7.3.2/pixi.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background: #0a0e27;
+            color: #fff;
+            overflow: hidden;
+        }
+
+        .container {
+            display: grid;
+            grid-template-columns: 250px 1fr 250px;
+            height: 100vh;
+            gap: 20px;
+            padding: 20px;
+        }
+
+        .sidebar {
+            background: rgba(21, 26, 53, 0.8);
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .sidebar h3 {
+            font-size: 0.9em;
+            color: #667eea;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+        }
+
+        .param-control {
+            margin-bottom: 20px;
+        }
+
+        .param-control label {
+            display: block;
+            font-size: 0.85em;
+            margin-bottom: 5px;
+            color: rgba(255,255,255,0.7);
+        }
+
+        .slider {
+            width: 100%;
+            -webkit-appearance: none;
+            height: 6px;
+            border-radius: 3px;
+            background: rgba(102, 126, 234, 0.3);
+            outline: none;
+        }
+
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(102, 126, 234, 0.5);
+        }
+
+        .param-value {
+            font-size: 1.2em;
+            font-weight: 700;
+            color: #667eea;
+            margin-top: 5px;
+        }
+
+        #canvas-container {
+            position: relative;
+            background: radial-gradient(ellipse at center, #0f1428 0%, #0a0e27 100%);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .info-panel {
+            background: rgba(21, 26, 53, 0.8);
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .metric-item {
+            margin-bottom: 15px;
+            padding: 12px;
+            background: rgba(102, 126, 234, 0.1);
+            border-radius: 8px;
+            border-left: 3px solid;
+        }
+
+        .metric-value {
+            font-size: 1.6em;
+            font-weight: 700;
+            font-family: 'Courier New', monospace;
+        }
+
+        .metric-label {
+            font-size: 0.75em;
+            color: rgba(255,255,255,0.6);
+            margin-top: 4px;
+        }
+
+        .layer-legend {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 20px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.8em;
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+        }
+
+        .status-live {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(67, 233, 123, 0.2);
+            border: 2px solid #43e97b;
+            border-radius: 20px;
+            padding: 8px 16px;
+            font-size: 0.85em;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #43e97b;
+            animation: pulse-dot 2s infinite;
+        }
+
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.2); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Left Sidebar: Live Controls -->
+        <div class="sidebar">
+            <h3>Live Parameters</h3>
+
+            <div class="param-control">
+                <label>File Descriptor (fd)</label>
+                <input type="range" min="3" max="10" value="3" class="slider" id="fd-slider">
+                <div class="param-value" id="fd-value">3</div>
+            </div>
+
+            <div class="param-control">
+                <label>Buffer Size (bytes)</label>
+                <input type="range" min="1024" max="16384" step="1024" value="4096" class="slider" id="size-slider">
+                <div class="param-value" id="size-value">4096</div>
+            </div>
+
+            <div class="param-control">
+                <label>Cache Hit Rate (%)</label>
+                <input type="range" min="0" max="100" value="85" class="slider" id="cache-slider">
+                <div class="param-value" id="cache-value">85%</div>
+            </div>
+
+            <div class="layer-legend">
+                <h3 style="margin-top: 20px;">Kernel Layers</h3>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #f093fb;"></div>
+                    <span>User Space</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #4facfe;"></div>
+                    <span>System Call</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #43e97b;"></div>
+                    <span>VFS Layer</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #fa709a;"></div>
+                    <span>Filesystem</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #fee140;"></div>
+                    <span>Block I/O</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #30cfd0;"></div>
+                    <span>Device Driver</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Center: PixiJS Canvas for Particle Flow -->
+        <div id="canvas-container">
+            <div class="status-live">
+                <div class="status-dot"></div>
+                LIVE MODE
+            </div>
+        </div>
+
+        <!-- Right Sidebar: Metrics -->
+        <div class="info-panel">
+            <h3>Performance Metrics</h3>
+            <div id="metrics-container"></div>
+        </div>
+    </div>
+
+    <script>
+        // ====================
+        // LIVE STATE MANAGEMENT
+        // ====================
+        const state = {
+            fd: 3,
+            size: 4096,
+            cacheHit: 85,
+            particles: []
+        };
+
+        const layers = [
+            { name: 'user', y: 0.1, color: 0xf093fb, label: 'User Space' },
+            { name: 'syscall', y: 0.25, color: 0x4facfe, label: 'System Call', time: 1 },
+            { name: 'vfs', y: 0.4, color: 0x43e97b, label: 'VFS', time: 0.5 },
+            { name: 'fs', y: 0.55, color: 0xfa709a, label: 'Filesystem', time: 2 },
+            { name: 'block', y: 0.7, color: 0xfee140, label: 'Block I/O', time: 10 },
+            { name: 'device', y: 0.85, color: 0x30cfd0, label: 'Device', time: 150 }
+        ];
+
+        // ====================
+        // PIXI.JS SETUP - Particle System
+        // ====================
+        const app = new PIXI.Application({
+            background: 'transparent',
+            resizeTo: document.getElementById('canvas-container'),
+            antialias: true
+        });
+
+        document.getElementById('canvas-container').appendChild(app.view);
+
+        const container = new PIXI.Container();
+        app.stage.addChild(container);
+
+        // Draw layer zones
+        const graphics = new PIXI.Graphics();
+        container.addChild(graphics);
+
+        function drawLayers() {
+            graphics.clear();
+            const width = app.screen.width;
+            const height = app.screen.height;
+
+            layers.forEach((layer, i) => {
+                const y = layer.y * height;
+                const layerHeight = (i < layers.length - 1 ? layers[i + 1].y - layer.y : 0.15) * height;
+
+                // Layer background
+                graphics.beginFill(layer.color, 0.1);
+                graphics.drawRect(0, y, width, layerHeight);
+                graphics.endFill();
+
+                // Layer separator line
+                graphics.lineStyle(2, layer.color, 0.5);
+                graphics.moveTo(0, y);
+                graphics.lineTo(width, y);
+
+                // Layer label
+                const text = new PIXI.Text(layer.label, {
+                    fontFamily: 'monospace',
+                    fontSize: 14,
+                    fill: layer.color,
+                    align: 'left'
+                });
+                text.x = 20;
+                text.y = y + 10;
+                container.addChild(text);
+            });
+        }
+
+        drawLayers();
+
+        // Particle class with spring physics
+        class Particle {
+            constructor(x, y, targetLayer, color) {
+                this.sprite = new PIXI.Graphics();
+                this.sprite.beginFill(color);
+                this.sprite.drawCircle(0, 0, 3);
+                this.sprite.endFill();
+                this.sprite.x = x;
+                this.sprite.y = y;
+                this.sprite.alpha = 0.8;
+
+                this.vx = (Math.random() - 0.5) * 2;
+                this.vy = 0;
+                this.targetY = targetLayer * app.screen.height;
+                this.color = color;
+                this.life = 1.0;
+
+                container.addChild(this.sprite);
+            }
+
+            update(delta) {
+                // Spring physics toward target layer
+                const dy = this.targetY - this.sprite.y;
+                const springForce = dy * 0.05; // Spring constant
+                const damping = 0.95; // Damping
+
+                this.vy += springForce;
+                this.vy *= damping;
+
+                this.sprite.y += this.vy * delta;
+                this.sprite.x += this.vx * delta;
+
+                // Horizontal drift
+                this.vx *= 0.99;
+
+                // Fade out as it reaches target
+                if (Math.abs(dy) < 50) {
+                    this.life -= 0.02 * delta;
+                    this.sprite.alpha = this.life * 0.8;
+                }
+
+                return this.life > 0;
+            }
+
+            destroy() {
+                container.removeChild(this.sprite);
+                this.sprite.destroy();
+            }
+        }
+
+        // Particle emitter
+        function emitParticles(count, fromLayer, toLayer) {
+            const startY = layers[fromLayer].y * app.screen.height;
+            const color = layers[toLayer].color;
+
+            for (let i = 0; i < count; i++) {
+                const x = app.screen.width / 2 + (Math.random() - 0.5) * 100;
+                const particle = new Particle(x, startY, layers[toLayer].y, color);
+                state.particles.push(particle);
+            }
+        }
+
+        // Animation loop
+        app.ticker.add((delta) => {
+            // Update all particles with spring physics
+            state.particles = state.particles.filter(p => p.update(delta));
+        });
+
+        // Continuous emission based on parameters
+        setInterval(() => {
+            const bytesPerSecond = state.size;
+            const particlesPerFrame = Math.min(bytesPerSecond / 1000, 50);
+
+            // Emit from user → syscall
+            emitParticles(Math.ceil(particlesPerFrame), 0, 1);
+
+            // Cache hit path (fast)
+            if (Math.random() * 100 < state.cacheHit) {
+                setTimeout(() => emitParticles(Math.ceil(particlesPerFrame * 0.3), 1, 2), 200);
+                setTimeout(() => emitParticles(Math.ceil(particlesPerFrame * 0.3), 2, 3), 400);
+            } else {
+                // Cache miss path (slow, goes through all layers)
+                setTimeout(() => emitParticles(Math.ceil(particlesPerFrame * 0.5), 1, 2), 200);
+                setTimeout(() => emitParticles(Math.ceil(particlesPerFrame * 0.5), 2, 3), 500);
+                setTimeout(() => emitParticles(Math.ceil(particlesPerFrame * 0.5), 3, 4), 900);
+                setTimeout(() => emitParticles(Math.ceil(particlesPerFrame * 0.3), 4, 5), 1500);
+            }
+        }, 1000);
+
+        // ====================
+        // LIVE PARAMETER UPDATES
+        // ====================
+        document.getElementById('fd-slider').addEventListener('input', (e) => {
+            state.fd = parseInt(e.target.value);
+            document.getElementById('fd-value').textContent = state.fd;
+            updateMetrics();
+        });
+
+        document.getElementById('size-slider').addEventListener('input', (e) => {
+            state.size = parseInt(e.target.value);
+            document.getElementById('size-value').textContent = state.size;
+            updateMetrics();
+        });
+
+        document.getElementById('cache-slider').addEventListener('input', (e) => {
+            state.cacheHit = parseInt(e.target.value);
+            document.getElementById('cache-value').textContent = state.cacheHit + '%';
+            updateMetrics();
+        });
+
+        // ====================
+        // D3.js for Metrics Visualization
+        // ====================
+        function updateMetrics() {
+            const ioOps = Math.ceil((100 - state.cacheHit) / 100 * Math.ceil(state.size / 4096));
+            const totalTime = 1 + 0.5 + 2 + (ioOps * 10) + (ioOps * 150);
+
+            const metrics = [
+                { label: 'Total Time', value: `${totalTime}μs`, color: '#4facfe' },
+                { label: 'Cache Hit Rate', value: `${state.cacheHit}%`, color: '#43e97b' },
+                { label: 'I/O Operations', value: ioOps, color: '#fee140' },
+                { label: 'Data Transfer', value: `${Math.ceil(state.size/1024)}KB`, color: '#fa709a' }
+            ];
+
+            const container = d3.select('#metrics-container');
+
+            // D3 data join
+            const items = container
+                .selectAll('.metric-item')
+                .data(metrics, d => d.label);
+
+            // Enter
+            const enter = items
+                .enter()
+                .append('div')
+                .attr('class', 'metric-item')
+                .style('border-color', d => d.color)
+                .style('opacity', 0);
+
+            enter.append('div')
+                .attr('class', 'metric-value')
+                .style('color', d => d.color);
+
+            enter.append('div')
+                .attr('class', 'metric-label');
+
+            // Update
+            enter.merge(items)
+                .transition()
+                .duration(500)
+                .style('opacity', 1)
+                .select('.metric-value')
+                .text(d => d.value);
+
+            enter.merge(items)
+                .select('.metric-label')
+                .text(d => d.label);
+
+            // Exit
+            items.exit()
+                .transition()
+                .duration(300)
+                .style('opacity', 0)
+                .remove();
+        }
+
+        // Initial metrics
+        updateMetrics();
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            drawLayers();
+        });
+    </script>
+</body>
+</html>

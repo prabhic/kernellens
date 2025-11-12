@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kernel Lens - GSAP Enhanced</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.4/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.4/MorphSVGPlugin.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background: #000;
+            color: #fff;
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .stage {
+            width: 90vw;
+            max-width: 1200px;
+            height: 80vh;
+            background: radial-gradient(ellipse at center, #0f1428 0%, #0a0e27 100%);
+            border-radius: 20px;
+            padding: 40px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .controls-top {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 30px;
+            background: rgba(21, 26, 53, 0.9);
+            padding: 15px 30px;
+            border-radius: 30px;
+            backdrop-filter: blur(10px);
+            z-index: 100;
+        }
+
+        .param {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .param label {
+            font-size: 0.7em;
+            color: rgba(255,255,255,0.6);
+            text-transform: uppercase;
+        }
+
+        .param input[type="range"] {
+            width: 120px;
+        }
+
+        .param-value {
+            font-size: 1em;
+            font-weight: 700;
+            color: #667eea;
+            font-family: 'Courier New', monospace;
+        }
+
+        #canvas-particles {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        #svg-morph {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 600px;
+            height: 500px;
+        }
+
+        .layer-zone {
+            fill: transparent;
+            stroke: currentColor;
+            stroke-width: 1;
+            stroke-dasharray: 5,5;
+            opacity: 0.3;
+        }
+
+        .data-blob {
+            filter: drop-shadow(0 0 20px currentColor);
+        }
+
+        .stage-label {
+            position: absolute;
+            font-size: 0.8em;
+            color: rgba(255,255,255,0.5);
+            font-family: 'Courier New', monospace;
+        }
+
+        .live-indicator {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(67, 233, 123, 0.2);
+            border: 2px solid #43e97b;
+            border-radius: 20px;
+            padding: 8px 16px;
+            font-size: 0.85em;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .pulse-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #43e97b;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.3); }
+        }
+
+        .info-box {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            background: rgba(21, 26, 53, 0.8);
+            border-radius: 12px;
+            padding: 20px;
+            display: flex;
+            justify-content: space-around;
+        }
+
+        .metric {
+            text-align: center;
+        }
+
+        .metric-value {
+            font-size: 1.8em;
+            font-weight: 700;
+            font-family: 'Courier New', monospace;
+        }
+
+        .metric-label {
+            font-size: 0.75em;
+            color: rgba(255,255,255,0.6);
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="stage">
+        <div class="live-indicator">
+            <div class="pulse-dot"></div>
+            LIVE MODE
+        </div>
+
+        <div class="controls-top">
+            <div class="param">
+                <label>File Descriptor</label>
+                <input type="range" min="3" max="10" value="3" id="fd-input">
+                <div class="param-value" id="fd-display">fd=3</div>
+            </div>
+            <div class="param">
+                <label>Buffer Size</label>
+                <input type="range" min="1024" max="16384" step="1024" value="4096" id="size-input">
+                <div class="param-value" id="size-display">4096B</div>
+            </div>
+            <div class="param">
+                <label>Cache Hit %</label>
+                <input type="range" min="0" max="100" value="85" id="cache-input">
+                <div class="param-value" id="cache-display">85%</div>
+            </div>
+        </div>
+
+        <canvas id="canvas-particles"></canvas>
+
+        <svg id="svg-morph" viewBox="0 0 600 500">
+            <!-- Layer zones -->
+            <rect class="layer-zone" x="50" y="50" width="500" height="60" style="color: #f093fb"/>
+            <rect class="layer-zone" x="50" y="120" width="500" height="60" style="color: #4facfe"/>
+            <rect class="layer-zone" x="50" y="190" width="500" height="60" style="color: #43e97b"/>
+            <rect class="layer-zone" x="50" y="260" width="500" height="60" style="color: #fa709a"/>
+            <rect class="layer-zone" x="50" y="330" width="500" height="60" style="color: #fee140"/>
+            <rect class="layer-zone" x="50" y="400" width="500" height="60" style="color: #30cfd0"/>
+
+            <text x="60" y="75" class="stage-label" fill="#f093fb">USER SPACE</text>
+            <text x="60" y="145" class="stage-label" fill="#4facfe">SYSCALL</text>
+            <text x="60" y="215" class="stage-label" fill="#43e97b">VFS</text>
+            <text x="60" y="285" class="stage-label" fill="#fa709a">FILESYSTEM</text>
+            <text x="60" y="355" class="stage-label" fill="#fee140">BLOCK I/O</text>
+            <text x="60" y="425" class="stage-label" fill="#30cfd0">DEVICE</text>
+
+            <!-- Morphing data blob -->
+            <g id="morph-container">
+                <path id="data-shape" class="data-blob" fill="#f093fb" d="M 280,80 m -20,0 a 20,20 0 1,0 40,0 a 20,20 0 1,0 -40,0">
+                </path>
+
+                <text id="data-label" x="300" y="85" text-anchor="middle" font-size="12" font-weight="bold" fill="#0a0e27">
+                    fd=3
+                </text>
+            </g>
+        </svg>
+
+        <div class="info-box">
+            <div class="metric">
+                <div class="metric-value" style="color: #4facfe" id="time-metric">163.5μs</div>
+                <div class="metric-label">Total Time</div>
+            </div>
+            <div class="metric">
+                <div class="metric-value" style="color: #43e97b" id="cache-metric">85%</div>
+                <div class="metric-label">Cache Hit</div>
+            </div>
+            <div class="metric">
+                <div class="metric-value" style="color: #fee140" id="io-metric">1</div>
+                <div class="metric-label">I/O Ops</div>
+            </div>
+            <div class="metric">
+                <div class="metric-value" style="color: #fa709a" id="transfer-metric">4KB</div>
+                <div class="metric-label">Transfer</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ====================
+        // STATE & CONFIGURATION
+        // ====================
+        const state = {
+            fd: 3,
+            size: 4096,
+            cacheHit: 85,
+            currentLayer: 0
+        };
+
+        const shapes = {
+            circle: "M 280,80 m -20,0 a 20,20 0 1,0 40,0 a 20,20 0 1,0 -40,0",
+            bars: "M 260,135 L 340,135 L 340,150 L 260,150 Z M 260,155 L 340,155 L 340,170 L 260,170 Z M 260,175 L 340,175 L 340,190 L 260,190 Z",
+            tree: "M 250,200 L 350,200 L 350,250 L 250,250 Z M 255,210 L 265,210 L 265,220 L 255,220 Z M 255,230 L 345,230 L 345,240 L 255,240 Z",
+            grid: "M 265,270 L 285,270 L 285,290 L 265,290 Z M 295,270 L 315,270 L 315,290 L 295,290 Z M 265,300 L 285,300 L 285,320 L 265,320 Z M 295,300 L 315,300 L 315,320 L 295,320 Z",
+            queue: "M 240,340 L 360,340 L 360,380 L 240,380 Z M 250,350 L 270,350 L 270,370 L 250,370 Z M 280,350 L 300,350 L 300,370 L 280,370 Z M 310,350 L 330,350 L 330,370 L 310,370 Z",
+            device: "M 250,410 L 350,410 L 350,450 L 250,450 Z M 270,420 L 280,420 L 280,430 L 270,430 Z M 320,420 L 330,420 L 330,430 L 320,430 Z"
+        };
+
+        const layers = [
+            { shape: 'circle', color: '#f093fb', y: 80, label: 'fd=3' },
+            { shape: 'bars', color: '#4facfe', y: 150, label: 'Registers' },
+            { shape: 'tree', color: '#43e97b', y: 215, label: 'file*' },
+            { shape: 'grid', color: '#fa709a', y: 285, label: 'Blocks' },
+            { shape: 'queue', color: '#fee140', y: 355, label: 'Queue' },
+            { shape: 'device', color: '#30cfd0', y: 425, label: 'Device' }
+        ];
+
+        // ====================
+        // CANVAS PARTICLE SYSTEM
+        // ====================
+        const canvas = document.getElementById('canvas-particles');
+        const ctx = canvas.getContext('2d');
+        canvas.width = canvas.offsetWidth;
+        canvas.height = canvas.offsetHeight;
+
+        const particles = [];
+
+        class Particle {
+            constructor(x, y, targetY, color) {
+                this.x = x;
+                this.y = y;
+                this.targetY = targetY;
+                this.vx = (Math.random() - 0.5) * 2;
+                this.vy = 0;
+                this.color = color;
+                this.life = 1.0;
+            }
+
+            update() {
+                // Spring physics
+                const dy = this.targetY - this.y;
+                this.vy += dy * 0.05;
+                this.vy *= 0.92;
+
+                this.y += this.vy;
+                this.x += this.vx;
+                this.vx *= 0.98;
+
+                if (Math.abs(dy) < 30) {
+                    this.life -= 0.02;
+                }
+
+                return this.life > 0;
+            }
+
+            draw() {
+                ctx.fillStyle = this.color;
+                ctx.globalAlpha = this.life * 0.6;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, 2, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        function emitParticles(count, fromY, toY, color) {
+            for (let i = 0; i < count; i++) {
+                particles.push(new Particle(
+                    canvas.width / 2 + (Math.random() - 0.5) * 100,
+                    fromY,
+                    toY,
+                    color
+                ));
+            }
+        }
+
+        function animateParticles() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            for (let i = particles.length - 1; i >= 0; i--) {
+                if (!particles[i].update()) {
+                    particles.splice(i, 1);
+                } else {
+                    particles[i].draw();
+                }
+            }
+
+            ctx.globalAlpha = 1.0;
+            requestAnimationFrame(animateParticles);
+        }
+
+        animateParticles();
+
+        // ====================
+        // GSAP MORPHING ANIMATION
+        // ====================
+        let morphTimeline;
+
+        function createMorphingFlow() {
+            if (morphTimeline) {
+                morphTimeline.kill();
+            }
+
+            morphTimeline = gsap.timeline({ repeat: -1, repeatDelay: 1 });
+
+            layers.forEach((layer, i) => {
+                if (i === 0) return;
+
+                const duration = 1.5;
+                const prevLayer = layers[i - 1];
+
+                morphTimeline.to('#data-shape', {
+                    attr: { d: shapes[layer.shape] },
+                    fill: layer.color,
+                    duration: duration,
+                    ease: "elastic.out(1, 0.5)" // Spring easing!
+                }, i * 2);
+
+                morphTimeline.to('#data-label', {
+                    textContent: layer.label,
+                    duration: 0.3,
+                    ease: "power2.out"
+                }, i * 2);
+
+                morphTimeline.to('#data-label', {
+                    attr: { y: layer.y + 5 },
+                    duration: duration,
+                    ease: "elastic.out(1, 0.5)"
+                }, i * 2);
+
+                // Emit particles during transition
+                morphTimeline.call(() => {
+                    emitParticles(30, prevLayer.y, layer.y, layer.color);
+                }, null, i * 2);
+            });
+        }
+
+        createMorphingFlow();
+
+        // ====================
+        // LIVE PARAMETER UPDATES
+        // ====================
+        function updateMetrics() {
+            const ioOps = Math.ceil((100 - state.cacheHit) / 100 * Math.ceil(state.size / 4096));
+            const totalTime = 1 + 0.5 + 2 + (ioOps * 10) + (ioOps * 150);
+
+            // Animate metrics with GSAP
+            gsap.to('#time-metric', {
+                textContent: totalTime.toFixed(1) + 'μs',
+                duration: 0.5,
+                snap: { textContent: 0.1 }
+            });
+
+            gsap.to('#cache-metric', {
+                textContent: state.cacheHit + '%',
+                duration: 0.5
+            });
+
+            gsap.to('#io-metric', {
+                textContent: ioOps,
+                duration: 0.5,
+                snap: { textContent: 1 }
+            });
+
+            gsap.to('#transfer-metric', {
+                textContent: Math.ceil(state.size / 1024) + 'KB',
+                duration: 0.5
+            });
+        }
+
+        document.getElementById('fd-input').addEventListener('input', (e) => {
+            state.fd = parseInt(e.target.value);
+            document.getElementById('fd-display').textContent = `fd=${state.fd}`;
+            layers[0].label = `fd=${state.fd}`;
+            updateMetrics();
+        });
+
+        document.getElementById('size-input').addEventListener('input', (e) => {
+            state.size = parseInt(e.target.value);
+            document.getElementById('size-display').textContent = `${state.size}B`;
+            updateMetrics();
+        });
+
+        document.getElementById('cache-input').addEventListener('input', (e) => {
+            state.cacheHit = parseInt(e.target.value);
+            document.getElementById('cache-display').textContent = `${state.cacheHit}%`;
+            updateMetrics();
+        });
+
+        updateMetrics();
+
+        // Handle resize
+        window.addEventListener('resize', () => {
+            canvas.width = canvas.offsetWidth;
+            canvas.height = canvas.offsetHeight;
+        });
+    </script>
+</body>
+</html>
