@@ -327,8 +327,8 @@
             border-radius: 10px;
             padding: 12px 15px;
             display: grid;
-            grid-template-columns: 45px 1fr 120px;
-            gap: 12px;
+            grid-template-columns: 180px 1fr 120px;
+            gap: 15px;
             align-items: center;
             transition: all 0.4s;
             position: relative;
@@ -356,6 +356,64 @@
             align-items: center;
             justify-content: center;
             font-size: 1.3em;
+        }
+
+        /* SVG Visualization */
+        .step-visual {
+            width: 170px;
+            height: 80px;
+            background: #0a0e27;
+            border-radius: 8px;
+            padding: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .step-visual svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Morph animations */
+        .morph-shape {
+            transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .transform-step.active .morph-shape {
+            animation: shape-pulse 1.5s ease-in-out;
+        }
+
+        @keyframes shape-pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.8; transform: scale(1.05); }
+        }
+
+        /* Data flow particles */
+        .data-particle {
+            fill: currentColor;
+            opacity: 0;
+        }
+
+        .transform-step.active .data-particle {
+            animation: particle-flow 1.2s ease-in-out forwards;
+        }
+
+        @keyframes particle-flow {
+            0% { opacity: 0; cy: 10; }
+            50% { opacity: 1; }
+            100% { opacity: 0; cy: 60; }
+        }
+
+        /* Visual encoding: width represents time */
+        .time-bar {
+            fill: currentColor;
+            opacity: 0.3;
+            transition: width 0.6s;
+        }
+
+        .transform-step.active .time-bar {
+            opacity: 0.6;
         }
 
         .step-info {
@@ -601,6 +659,168 @@
     <div class="tooltip" id="tooltip"></div>
 
     <script>
+        // SVG visualization generators
+        function generateSyscallSVG(params) {
+            return `
+                <svg viewBox="0 0 150 70" xmlns="http://www.w3.org/2000/svg">
+                    <!-- User space circle -->
+                    <circle class="morph-shape" cx="30" cy="35" r="20" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="3,3"/>
+                    <text x="30" y="32" text-anchor="middle" fill="currentColor" font-size="8" font-family="monospace">fd=${params.fd}</text>
+                    <text x="30" y="42" text-anchor="middle" fill="currentColor" font-size="7" font-family="monospace">${params.size}B</text>
+
+                    <!-- Arrow morphing -->
+                    <path class="morph-shape" d="M 52 35 L 75 35" stroke="currentColor" stroke-width="2" marker-end="url(#arrowhead)"/>
+                    <circle class="data-particle" cx="60" cy="35" r="3"/>
+
+                    <!-- Kernel space rectangle -->
+                    <rect class="morph-shape" x="80" y="15" width="60" height="40" rx="4" fill="none" stroke="currentColor" stroke-width="2"/>
+                    <text x="110" y="28" text-anchor="middle" fill="currentColor" font-size="7" font-family="monospace">RAX=0</text>
+                    <text x="110" y="37" text-anchor="middle" fill="currentColor" font-size="7" font-family="monospace">RDI=${params.fd}</text>
+                    <text x="110" y="46" text-anchor="middle" fill="currentColor" font-size="7" font-family="monospace">RDX=${params.size}</text>
+
+                    <defs>
+                        <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                            <polygon points="0 0, 10 3, 0 6" fill="currentColor"/>
+                        </marker>
+                    </defs>
+                </svg>
+            `;
+        }
+
+        function generateVFSSVG(params) {
+            return `
+                <svg viewBox="0 0 150 70" xmlns="http://www.w3.org/2000/svg">
+                    <!-- FD number -->
+                    <circle class="morph-shape" cx="25" cy="35" r="15" fill="currentColor" opacity="0.3"/>
+                    <text x="25" y="32" text-anchor="middle" fill="currentColor" font-size="10" font-family="monospace" font-weight="bold">fd</text>
+                    <text x="25" y="42" text-anchor="middle" fill="currentColor" font-size="11" font-family="monospace" font-weight="bold">${params.fd}</text>
+
+                    <!-- Arrow -->
+                    <path d="M 43 35 L 60 35" stroke="currentColor" stroke-width="2" marker-end="url(#arrowhead2)"/>
+                    <circle class="data-particle" cx="50" cy="35" r="2"/>
+
+                    <!-- File structure (tree) -->
+                    <g class="morph-shape">
+                        <rect x="65" y="20" width="75" height="30" rx="3" fill="none" stroke="currentColor" stroke-width="1.5"/>
+                        <line x1="65" y1="28" x2="140" y2="28" stroke="currentColor" stroke-width="1"/>
+                        <text x="70" y="26" fill="currentColor" font-size="6" font-family="monospace">file*</text>
+                        <text x="70" y="38" fill="currentColor" font-size="6" font-family="monospace">path: /data.txt</text>
+                        <text x="70" y="46" fill="currentColor" font-size="6" font-family="monospace">inode: 524288</text>
+                    </g>
+
+                    <defs>
+                        <marker id="arrowhead2" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                            <polygon points="0 0, 10 3, 0 6" fill="currentColor"/>
+                        </marker>
+                    </defs>
+                </svg>
+            `;
+        }
+
+        function generateFSSVG(params) {
+            const blocks = Math.ceil(params.size / 4096);
+            return `
+                <svg viewBox="0 0 150 70" xmlns="http://www.w3.org/2000/svg">
+                    <!-- Inode structure -->
+                    <rect class="morph-shape" x="10" y="15" width="50" height="40" rx="4" fill="none" stroke="currentColor" stroke-width="2"/>
+                    <text x="35" y="25" text-anchor="middle" fill="currentColor" font-size="7" font-family="monospace" font-weight="bold">INODE</text>
+                    <text x="35" y="35" text-anchor="middle" fill="currentColor" font-size="6" font-family="monospace">524288</text>
+                    <rect x="15" y="40" width="40" height="3" fill="currentColor" opacity="0.5"/>
+                    <text x="35" y="50" text-anchor="middle" fill="currentColor" font-size="5" font-family="monospace">extents</text>
+
+                    <!-- Arrow -->
+                    <path d="M 63 35 L 75 35" stroke="currentColor" stroke-width="2" marker-end="url(#arrowhead3)"/>
+
+                    <!-- Block array (morphing from inode) -->
+                    <g class="morph-shape">
+                        ${Array.from({length: Math.min(blocks, 6)}).map((_, i) => `
+                            <rect x="${85 + (i % 3) * 18}" y="${20 + Math.floor(i / 3) * 18}" width="15" height="15"
+                                  rx="2" fill="currentColor" opacity="0.4" stroke="currentColor" stroke-width="1"/>
+                            <text x="${92 + (i % 3) * 18}" y="${30 + Math.floor(i / 3) * 18}" text-anchor="middle"
+                                  fill="#0a0e27" font-size="6" font-family="monospace" font-weight="bold">${i}</text>
+                        `).join('')}
+                        ${blocks > 6 ? `<text x="135" y="42" fill="currentColor" font-size="8" font-family="monospace">+${blocks-6}</text>` : ''}
+                    </g>
+
+                    <defs>
+                        <marker id="arrowhead3" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                            <polygon points="0 0, 10 3, 0 6" fill="currentColor"/>
+                        </marker>
+                    </defs>
+                </svg>
+            `;
+        }
+
+        function generateBlockSVG(params) {
+            return `
+                <svg viewBox="0 0 150 70" xmlns="http://www.w3.org/2000/svg">
+                    <!-- Block queue visualization -->
+                    <g class="morph-shape">
+                        <!-- Queue container -->
+                        <rect x="10" y="15" width="130" height="40" rx="4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="4,2"/>
+                        <text x="75" y="12" text-anchor="middle" fill="currentColor" font-size="6" font-family="monospace">I/O SCHEDULER QUEUE</text>
+
+                        <!-- Blocks in queue -->
+                        <rect x="20" y="25" width="20" height="20" rx="2" fill="currentColor" opacity="0.6"/>
+                        <text x="30" y="37" text-anchor="middle" fill="#0a0e27" font-size="7" font-family="monospace" font-weight="bold">BIO</text>
+
+                        <rect x="50" y="25" width="20" height="20" rx="2" fill="currentColor" opacity="0.4"/>
+                        <rect x="80" y="25" width="20" height="20" rx="2" fill="currentColor" opacity="0.3"/>
+                        <rect x="110" y="25" width="20" height="20" rx="2" fill="currentColor" opacity="0.2"/>
+
+                        <!-- Flow arrow -->
+                        <path d="M 25 50 L 125 50" stroke="currentColor" stroke-width="1" marker-end="url(#arrowhead4)"/>
+                        <circle class="data-particle" cx="60" cy="50" r="2"/>
+                        <circle class="data-particle" cx="80" cy="50" r="2" style="animation-delay: 0.2s"/>
+                    </g>
+
+                    <defs>
+                        <marker id="arrowhead4" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                            <polygon points="0 0, 10 3, 0 6" fill="currentColor"/>
+                        </marker>
+                    </defs>
+                </svg>
+            `;
+        }
+
+        function generateDeviceSVG(params) {
+            return `
+                <svg viewBox="0 0 150 70" xmlns="http://www.w3.org/2000/svg">
+                    <!-- SCSI command -->
+                    <g class="morph-shape">
+                        <rect x="10" y="20" width="50" height="30" rx="3" fill="none" stroke="currentColor" stroke-width="2"/>
+                        <text x="35" y="30" text-anchor="middle" fill="currentColor" font-size="7" font-family="monospace" font-weight="bold">SCSI</text>
+                        <text x="35" y="40" text-anchor="middle" fill="currentColor" font-size="6" font-family="monospace">READ</text>
+                        <text x="35" y="47" text-anchor="middle" fill="currentColor" font-size="5" font-family="monospace">LBA</text>
+                    </g>
+
+                    <!-- DMA transfer (bidirectional) -->
+                    <path d="M 63 30 L 82 30" stroke="currentColor" stroke-width="2" marker-end="url(#arrowhead5)"/>
+                    <path d="M 82 40 L 63 40" stroke="currentColor" stroke-width="2" marker-end="url(#arrowhead5)"/>
+                    <text x="72" y="28" text-anchor="middle" fill="currentColor" font-size="5" font-family="monospace">DMA</text>
+                    <circle class="data-particle" cx="70" cy="30" r="2"/>
+                    <circle class="data-particle" cx="70" cy="40" r="2" style="animation-delay: 0.3s"/>
+
+                    <!-- Physical device -->
+                    <g class="morph-shape">
+                        <rect x="87" y="15" width="55" height="40" rx="4" fill="currentColor" opacity="0.2" stroke="currentColor" stroke-width="2"/>
+                        <circle cx="108" cy="27" r="4" fill="currentColor"/>
+                        <circle cx="120" cy="27" r="4" fill="currentColor"/>
+                        <rect x="95" y="36" width="35" height="2" fill="currentColor"/>
+                        <rect x="95" y="41" width="35" height="2" fill="currentColor"/>
+                        <rect x="95" y="46" width="35" height="2" fill="currentColor"/>
+                        <text x="114" y="28" text-anchor="middle" fill="#0a0e27" font-size="5" font-family="monospace" font-weight="bold">SSD</text>
+                    </g>
+
+                    <defs>
+                        <marker id="arrowhead5" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                            <polygon points="0 0, 10 3, 0 6" fill="currentColor"/>
+                        </marker>
+                    </defs>
+                </svg>
+            `;
+        }
+
         const transformSteps = [
             {
                 id: 'syscall',
@@ -609,6 +829,7 @@
                 desc: 'Ring 3 → Ring 0',
                 time: '1μs',
                 color: 'color-syscall',
+                visualizer: generateSyscallSVG,
                 tooltip: {
                     title: 'Kernel Mode Transition',
                     desc: 'CPU switches privilege levels using SYSCALL instruction. Registers contain parameters.',
@@ -622,6 +843,7 @@
                 desc: 'fd → file*',
                 time: '0.5μs',
                 color: 'color-vfs',
+                visualizer: generateVFSSVG,
                 tooltip: {
                     title: 'File Descriptor Resolution',
                     desc: 'Maps file descriptor number to kernel file structure via FD table.',
@@ -635,6 +857,7 @@
                 desc: 'inode → blocks',
                 time: '2μs',
                 color: 'color-fs',
+                visualizer: generateFSSVG,
                 tooltip: {
                     title: 'Inode & Extent Lookup',
                     desc: 'Loads inode metadata and extent tree. Maps logical file offsets to physical blocks.',
@@ -648,6 +871,7 @@
                 desc: 'bio → queue',
                 time: '10μs',
                 color: 'color-block',
+                visualizer: generateBlockSVG,
                 tooltip: {
                     title: 'Block Layer Queueing',
                     desc: 'Creates BIO request and submits to I/O scheduler. May merge with pending requests.',
@@ -661,6 +885,7 @@
                 desc: 'SCSI → DMA',
                 time: '150μs',
                 color: 'color-device',
+                visualizer: generateDeviceSVG,
                 tooltip: {
                     title: 'Physical I/O Transfer',
                     desc: 'Issues SCSI READ command to device. DMA transfers data directly to memory.',
@@ -758,6 +983,14 @@
                 </div>
             `;
 
+            // Update visual morphing with new parameters
+            transformSteps.forEach(step => {
+                const visualEl = document.getElementById(`visual-${step.id}`);
+                if (visualEl) {
+                    visualEl.innerHTML = step.visualizer(currentParams);
+                }
+            });
+
             updateMetrics();
         }
 
@@ -769,7 +1002,9 @@
                 <div class="transform-step ${step.color}" id="step-${step.id}"
                      onmouseenter="showTooltip(event, '${step.id}')"
                      onmouseleave="hideTooltip()">
-                    <div class="step-icon">${step.icon}</div>
+                    <div class="step-visual" id="visual-${step.id}">
+                        ${step.visualizer(currentParams)}
+                    </div>
                     <div class="step-info">
                         <div class="step-title">${step.title}</div>
                         <div class="step-desc">${step.desc}</div>
