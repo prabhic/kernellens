@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kernel Lens - Interactive Kernel Visualization</title>
+    <title>Kernel Lens - Interactive Journey</title>
     <style>
         * {
             margin: 0;
@@ -13,23 +13,160 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
-            background: #0a0e27;
-            color: #e0e0e0;
+            background: #000;
+            color: #fff;
             overflow: hidden;
             height: 100vh;
         }
 
-        /* Cinematic container - fixed viewport */
-        .cinema-frame {
+        /* Journey mode - cinematic empty space */
+        .journey-space {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
             height: 100vh;
+            background: radial-gradient(ellipse at center, #0a0e27 0%, #000000 100%);
             display: flex;
-            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.5s;
         }
 
-        /* Top controls bar */
+        .journey-space.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        /* The kernel - pulsing dot */
+        .kernel-core {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: radial-gradient(circle, #667eea, #764ba2);
+            box-shadow:
+                0 0 30px rgba(102, 126, 234, 0.8),
+                0 0 60px rgba(118, 75, 162, 0.6),
+                0 0 90px rgba(102, 126, 234, 0.4);
+            animation: kernel-pulse 2s ease-in-out infinite;
+            cursor: pointer;
+            position: relative;
+            transition: all 1s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes kernel-pulse {
+            0%, 100% {
+                transform: scale(1);
+                box-shadow:
+                    0 0 30px rgba(102, 126, 234, 0.8),
+                    0 0 60px rgba(118, 75, 162, 0.6),
+                    0 0 90px rgba(102, 126, 234, 0.4);
+            }
+            50% {
+                transform: scale(1.1);
+                box-shadow:
+                    0 0 40px rgba(102, 126, 234, 1),
+                    0 0 80px rgba(118, 75, 162, 0.8),
+                    0 0 120px rgba(102, 126, 234, 0.6);
+            }
+        }
+
+        .kernel-core.zooming {
+            animation: zoom-in 2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+
+        @keyframes zoom-in {
+            0% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            100% {
+                transform: scale(50);
+                opacity: 0;
+            }
+        }
+
+        /* Journey text */
+        .journey-prompt {
+            position: absolute;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            opacity: 0;
+            animation: fade-in 1s ease-in 1s forwards;
+        }
+
+        @keyframes fade-in {
+            to { opacity: 1; }
+        }
+
+        .journey-prompt h2 {
+            font-size: 2em;
+            font-weight: 300;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .journey-prompt p {
+            font-size: 1.1em;
+            color: rgba(255,255,255,0.7);
+            margin-bottom: 20px;
+        }
+
+        .journey-controls {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .journey-btn {
+            padding: 12px 30px;
+            background: rgba(102, 126, 234, 0.2);
+            border: 2px solid rgba(102, 126, 234, 0.5);
+            border-radius: 30px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            backdrop-filter: blur(10px);
+        }
+
+        .journey-btn:hover {
+            background: rgba(102, 126, 234, 0.4);
+            border-color: rgba(102, 126, 234, 1);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+        }
+
+        /* Dashboard mode - the detailed view */
+        .dashboard-mode {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: #0a0e27;
+            opacity: 0;
+            transform: scale(0.8);
+            pointer-events: none;
+            transition: all 1s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .dashboard-mode.active {
+            opacity: 1;
+            transform: scale(1);
+            pointer-events: all;
+        }
+
+        /* Top bar */
         .top-bar {
             background: linear-gradient(135deg, #667eea, #764ba2);
-            padding: 20px;
+            padding: 15px 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -37,45 +174,59 @@
         }
 
         .title {
-            font-size: 1.8em;
+            font-size: 1.5em;
             font-weight: 800;
             color: white;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .mode-toggle {
+            padding: 6px 16px;
+            background: rgba(255,255,255,0.2);
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 20px;
+            color: white;
+            font-size: 0.85em;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .mode-toggle:hover {
+            background: rgba(255,255,255,0.3);
         }
 
         .controls {
             display: flex;
-            gap: 15px;
+            gap: 12px;
             align-items: center;
         }
 
         .control-group {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
         }
 
         .control-group label {
-            font-size: 0.85em;
+            font-size: 0.8em;
             color: rgba(255,255,255,0.9);
             font-weight: 600;
         }
 
         input, select {
-            padding: 6px 10px;
+            padding: 5px 10px;
             background: rgba(255,255,255,0.15);
             border: 1px solid rgba(255,255,255,0.3);
             border-radius: 6px;
             color: white;
             font-family: 'Courier New', monospace;
-            font-size: 0.9em;
-        }
-
-        input::placeholder {
-            color: rgba(255,255,255,0.5);
+            font-size: 0.85em;
         }
 
         button {
-            padding: 8px 20px;
+            padding: 6px 18px;
             background: rgba(255,255,255,0.2);
             border: 1px solid rgba(255,255,255,0.3);
             border-radius: 6px;
@@ -83,6 +234,7 @@
             font-weight: 700;
             cursor: pointer;
             transition: all 0.2s;
+            font-size: 0.85em;
         }
 
         button:hover {
@@ -90,29 +242,28 @@
             transform: translateY(-1px);
         }
 
-        /* Main visualization area - fits in viewport */
+        /* Visualization area */
         .viz-stage {
-            flex: 1;
             display: grid;
-            grid-template-columns: 250px 1fr 250px;
-            gap: 20px;
-            padding: 20px;
+            grid-template-columns: 220px 1fr 220px;
+            gap: 15px;
+            padding: 15px;
+            height: calc(100vh - 65px);
             overflow: hidden;
         }
 
-        /* Left sidebar - input/output */
         .sidebar {
             background: #151a35;
             border: 2px solid #2d3561;
             border-radius: 12px;
-            padding: 20px;
+            padding: 15px;
             display: flex;
             flex-direction: column;
-            gap: 20px;
+            gap: 15px;
         }
 
         .sidebar-title {
-            font-size: 0.9em;
+            font-size: 0.8em;
             font-weight: 700;
             color: #9fa8da;
             text-transform: uppercase;
@@ -124,7 +275,7 @@
             background: #1a1f3a;
             border: 2px solid #3d4575;
             border-radius: 10px;
-            padding: 15px;
+            padding: 12px;
             transition: all 0.3s;
         }
 
@@ -134,23 +285,22 @@
         }
 
         .data-card-label {
-            font-size: 0.75em;
+            font-size: 0.7em;
             color: #9fa8da;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
         }
 
         .data-card-content {
             font-family: 'Courier New', monospace;
-            font-size: 0.85em;
-            line-height: 1.6;
+            font-size: 0.8em;
+            line-height: 1.5;
         }
 
         .data-field {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 4px;
+            margin-bottom: 3px;
         }
 
         .data-field-name {
@@ -162,23 +312,23 @@
             font-weight: 700;
         }
 
-        /* Center - transformation pipeline */
+        /* Pipeline */
         .pipeline {
             display: flex;
             flex-direction: column;
             justify-content: space-around;
-            gap: 10px;
-            padding: 20px 0;
+            gap: 8px;
+            padding: 15px 0;
         }
 
         .transform-step {
             background: #151a35;
             border: 2px solid #2d3561;
-            border-radius: 12px;
-            padding: 15px 20px;
+            border-radius: 10px;
+            padding: 12px 15px;
             display: grid;
-            grid-template-columns: 60px 1fr 150px;
-            gap: 15px;
+            grid-template-columns: 45px 1fr 120px;
+            gap: 12px;
             align-items: center;
             transition: all 0.4s;
             position: relative;
@@ -188,67 +338,60 @@
         .transform-step:hover {
             transform: translateX(5px);
             border-color: currentColor;
-            box-shadow: 0 0 25px rgba(0,0,0,0.3);
         }
 
         .transform-step.active {
             border-color: currentColor;
-            box-shadow: 0 0 30px currentColor;
+            box-shadow: 0 0 25px currentColor;
             background: linear-gradient(90deg, transparent, rgba(255,255,255,0.05));
         }
 
         .step-icon {
-            width: 50px;
-            height: 50px;
+            width: 40px;
+            height: 40px;
             border-radius: 50%;
             background: currentColor;
             color: #0a0e27;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.5em;
-            font-weight: 700;
+            font-size: 1.3em;
         }
 
         .step-info {
             display: flex;
             flex-direction: column;
-            gap: 5px;
+            gap: 3px;
         }
 
         .step-title {
-            font-size: 1em;
+            font-size: 0.95em;
             font-weight: 700;
             color: #e0e0e0;
         }
 
         .step-desc {
-            font-size: 0.8em;
+            font-size: 0.75em;
             color: #9fa8da;
             font-family: 'Courier New', monospace;
         }
 
         .step-timing {
             text-align: right;
-            display: flex;
-            flex-direction: column;
-            gap: 3px;
         }
 
         .step-time {
-            font-size: 1.4em;
+            font-size: 1.3em;
             font-weight: 700;
             font-family: 'Courier New', monospace;
             color: currentColor;
         }
 
         .step-label {
-            font-size: 0.7em;
+            font-size: 0.65em;
             color: #9fa8da;
-            text-transform: uppercase;
         }
 
-        /* Flow indicator on left edge */
         .transform-step::before {
             content: '';
             position: absolute;
@@ -265,62 +408,57 @@
             opacity: 1;
         }
 
-        /* Connection lines between steps */
         .connection-line {
             width: 2px;
-            height: 10px;
+            height: 8px;
             background: linear-gradient(180deg, #2d3561, transparent);
             margin: 0 auto;
         }
 
-        /* Right sidebar - metrics */
+        /* Metrics */
         .metrics-panel {
             background: #151a35;
             border: 2px solid #2d3561;
             border-radius: 12px;
-            padding: 20px;
+            padding: 15px;
             display: flex;
             flex-direction: column;
-            gap: 15px;
+            gap: 12px;
         }
 
         .metrics-title {
-            font-size: 0.9em;
+            font-size: 0.8em;
             font-weight: 700;
             color: #9fa8da;
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            margin-bottom: 5px;
         }
 
         .metric-item {
             background: #1a1f3a;
             border-radius: 8px;
-            padding: 12px;
+            padding: 10px;
             border-left: 3px solid currentColor;
         }
 
         .metric-value {
-            font-size: 1.8em;
+            font-size: 1.6em;
             font-weight: 700;
             font-family: 'Courier New', monospace;
             color: currentColor;
         }
 
         .metric-label {
-            font-size: 0.75em;
+            font-size: 0.7em;
             color: #9fa8da;
-            margin-top: 3px;
-        }
-
-        .metric-bar {
-            margin-top: 8px;
+            margin-top: 2px;
         }
 
         .metric-bar-fill {
-            height: 6px;
+            height: 5px;
             background: currentColor;
             border-radius: 3px;
+            margin-top: 6px;
             transition: width 0.6s;
         }
 
@@ -330,8 +468,8 @@
             background: #1a1f3a;
             border: 2px solid currentColor;
             border-radius: 10px;
-            padding: 15px;
-            max-width: 320px;
+            padding: 12px;
+            max-width: 300px;
             pointer-events: none;
             opacity: 0;
             transition: opacity 0.2s;
@@ -345,30 +483,30 @@
 
         .tooltip-title {
             font-weight: 700;
-            margin-bottom: 8px;
-            font-size: 1em;
+            margin-bottom: 6px;
+            font-size: 0.95em;
             color: currentColor;
         }
 
         .tooltip-desc {
             color: #c0c0c0;
-            font-size: 0.85em;
-            line-height: 1.5;
-            margin-bottom: 10px;
+            font-size: 0.8em;
+            line-height: 1.4;
+            margin-bottom: 8px;
         }
 
         .tooltip-code {
             background: #0a0e27;
-            padding: 8px;
+            padding: 6px;
             border-radius: 6px;
             font-family: 'Courier New', monospace;
-            font-size: 0.75em;
+            font-size: 0.7em;
             color: #a0a0a0;
             white-space: pre;
-            line-height: 1.4;
+            line-height: 1.3;
         }
 
-        /* Color scheme */
+        /* Colors */
         .color-user { color: #f093fb; }
         .color-syscall { color: #4facfe; }
         .color-vfs { color: #43e97b; }
@@ -376,7 +514,6 @@
         .color-block { color: #fee140; }
         .color-device { color: #30cfd0; }
 
-        /* Animations */
         @keyframes pulse {
             0%, 100% { opacity: 1; }
             50% { opacity: 0.7; }
@@ -392,18 +529,31 @@
                 grid-template-columns: 1fr;
                 overflow-y: auto;
             }
-
-            .sidebar, .metrics-panel {
-                max-height: none;
-            }
         }
     </style>
 </head>
 <body>
-    <div class="cinema-frame">
-        <!-- Top bar -->
+    <!-- Journey Mode: Empty space with pulsing kernel -->
+    <div class="journey-space" id="journey-space">
+        <div class="kernel-core" id="kernel-core" onclick="enterKernel()"></div>
+
+        <div class="journey-prompt">
+            <h2>The Linux Kernel</h2>
+            <p>A living, breathing system waiting for your command</p>
+            <div class="journey-controls">
+                <button class="journey-btn" onclick="enterKernel()">Journey Inside</button>
+                <button class="journey-btn" onclick="skipToDashboard()">Dashboard View</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dashboard Mode: Detailed visualization -->
+    <div class="dashboard-mode" id="dashboard-mode">
         <div class="top-bar">
-            <div class="title">🔍 Kernel Lens</div>
+            <div class="title">
+                <span>🔍 Kernel Lens</span>
+                <button class="mode-toggle" onclick="returnToJourney()">← Journey Mode</button>
+            </div>
             <div class="controls">
                 <div class="control-group">
                     <label>syscall:</label>
@@ -414,19 +564,17 @@
                 </div>
                 <div class="control-group">
                     <label>fd:</label>
-                    <input type="number" id="fd" value="3" style="width: 60px">
+                    <input type="number" id="fd" value="3" style="width: 55px">
                 </div>
                 <div class="control-group">
                     <label>size:</label>
-                    <input type="number" id="size" value="4096" style="width: 80px">
+                    <input type="number" id="size" value="4096" style="width: 70px">
                 </div>
                 <button onclick="executeFlow()">⚡ Execute</button>
             </div>
         </div>
 
-        <!-- Main visualization stage -->
         <div class="viz-stage">
-            <!-- Left: Input data -->
             <div class="sidebar">
                 <div class="sidebar-title">Input</div>
                 <div class="data-card color-user" id="input-card">
@@ -441,10 +589,8 @@
                 </div>
             </div>
 
-            <!-- Center: Transformation pipeline -->
             <div class="pipeline" id="pipeline"></div>
 
-            <!-- Right: Metrics -->
             <div class="metrics-panel">
                 <div class="metrics-title">Performance</div>
                 <div id="metrics-content"></div>
@@ -524,13 +670,55 @@
         ];
 
         let currentParams = { fd: 3, size: 4096 };
+        let inDashboard = false;
+
+        // Journey into kernel
+        function enterKernel() {
+            const kernelCore = document.getElementById('kernel-core');
+            const journeySpace = document.getElementById('journey-space');
+            const dashboardMode = document.getElementById('dashboard-mode');
+
+            // Zoom animation
+            kernelCore.classList.add('zooming');
+
+            // Fade out journey, fade in dashboard
+            setTimeout(() => {
+                journeySpace.classList.add('hidden');
+                dashboardMode.classList.add('active');
+                inDashboard = true;
+
+                // Auto-execute after entering
+                setTimeout(executeFlow, 500);
+            }, 1500);
+        }
+
+        // Skip directly to dashboard
+        function skipToDashboard() {
+            document.getElementById('journey-space').classList.add('hidden');
+            document.getElementById('dashboard-mode').classList.add('active');
+            inDashboard = true;
+            updateInputOutput();
+        }
+
+        // Return to journey
+        function returnToJourney() {
+            const journeySpace = document.getElementById('journey-space');
+            const dashboardMode = document.getElementById('dashboard-mode');
+            const kernelCore = document.getElementById('kernel-core');
+
+            dashboardMode.classList.remove('active');
+            setTimeout(() => {
+                journeySpace.classList.remove('hidden');
+                kernelCore.classList.remove('zooming');
+                inDashboard = false;
+            }, 500);
+        }
 
         function updateInputOutput() {
             const fd = document.getElementById('fd').value;
             const size = document.getElementById('size').value;
             currentParams = { fd, size };
 
-            // Update input
             document.getElementById('input-content').innerHTML = `
                 <div class="data-field">
                     <span class="data-field-name">syscall:</span>
@@ -550,7 +738,6 @@
                 </div>
             `;
 
-            // Update output
             const totalTime = 1 + 0.5 + 2 + 10 + 150;
             document.getElementById('output-content').innerHTML = `
                 <div class="data-field">
@@ -611,9 +798,7 @@
                 <div class="metric-item color-fs">
                     <div class="metric-value">${cacheHit}%</div>
                     <div class="metric-label">Cache Hit Rate</div>
-                    <div class="metric-bar">
-                        <div class="metric-bar-fill" style="width: ${cacheHit}%"></div>
-                    </div>
+                    <div class="metric-bar-fill" style="width: ${cacheHit}%"></div>
                 </div>
 
                 <div class="metric-item color-device">
@@ -631,23 +816,19 @@
         function executeFlow() {
             updateInputOutput();
 
-            // Activate input
             const inputCard = document.getElementById('input-card');
             inputCard.classList.add('active', 'pulsing');
 
-            // Clear previous active states
             document.querySelectorAll('.transform-step').forEach(el => {
                 el.classList.remove('active', 'pulsing');
             });
 
-            // Animate through steps
             let delay = 500;
             transformSteps.forEach((step, i) => {
                 setTimeout(() => {
                     const el = document.getElementById(`step-${step.id}`);
                     el.classList.add('active', 'pulsing');
 
-                    // Remove from previous
                     if (i > 0) {
                         const prev = document.getElementById(`step-${transformSteps[i-1].id}`);
                         prev.classList.remove('pulsing');
@@ -659,7 +840,6 @@
                 delay += parseInt(step.time) * 5 + 300;
             });
 
-            // Activate output at the end
             setTimeout(() => {
                 transformSteps.forEach(step => {
                     document.getElementById(`step-${step.id}`).classList.remove('pulsing');
@@ -695,10 +875,8 @@
         window.addEventListener('load', () => {
             renderPipeline();
             updateInputOutput();
-            setTimeout(executeFlow, 1000);
         });
 
-        // Update on input change
         ['fd', 'size'].forEach(id => {
             document.getElementById(id).addEventListener('input', updateInputOutput);
         });
