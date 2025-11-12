@@ -260,11 +260,12 @@
             background: var(--bg-tertiary);
             border: 2px solid var(--border);
             border-radius: 12px;
-            padding: 25px;
+            padding: 20px;
             margin-bottom: 20px;
             transition: all 0.4s;
             position: relative;
             overflow: hidden;
+            cursor: pointer;
         }
 
         .layer-card::before {
@@ -295,10 +296,28 @@
             width: 6px;
         }
 
+        /* Expanded state for accordion */
+        .layer-card.expanded {
+            padding: 32px;
+            border-color: #ffd700;
+            box-shadow: 0 8px 30px rgba(255, 215, 0, 0.3);
+        }
+
+        .layer-card.expanded::before {
+            background: #ffd700;
+            width: 6px;
+            opacity: 1;
+        }
+
         .layer-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
+            margin-bottom: 0;
+            transition: margin-bottom 0.3s;
+        }
+
+        .layer-card.expanded .layer-header {
             margin-bottom: 20px;
         }
 
@@ -326,6 +345,18 @@
             font-weight: 700;
         }
 
+        .layer-expand-icon {
+            font-size: 1.2em;
+            color: var(--text-muted);
+            transition: transform 0.3s;
+            margin-left: 10px;
+        }
+
+        .layer-card.expanded .layer-expand-icon {
+            transform: rotate(180deg);
+            color: #ffd700;
+        }
+
         .layer-badge {
             padding: 6px 14px;
             border-radius: 20px;
@@ -338,9 +369,20 @@
         }
 
         .layer-details {
-            display: grid;
+            display: none;
             grid-template-columns: 1fr 1fr;
             gap: 15px;
+            margin-top: 20px;
+            opacity: 0;
+            max-height: 0;
+            overflow: hidden;
+            transition: opacity 0.3s, max-height 0.4s;
+        }
+
+        .layer-card.expanded .layer-details {
+            display: grid;
+            opacity: 1;
+            max-height: 1000px;
         }
 
         @media (max-width: 1100px) {
@@ -861,11 +903,12 @@
                 ` : ''}
 
                 <div class="layer-card" style="color: ${layer.color}" id="layer-${i}"
+                     onclick="toggleLayerExpansion(${i})"
                      onmouseenter="showLayerTooltip(${i}, event)" onmouseleave="hideTooltip()">
                     <div class="layer-header">
                         <div class="layer-title-group">
                             <div class="layer-icon">${layer.icon}</div>
-                            <div class="layer-title">${layer.name}</div>
+                            <div class="layer-title">${layer.name}<span class="layer-expand-icon">▼</span></div>
                         </div>
                         <div class="layer-badge">${layer.badge}</div>
                     </div>
@@ -994,6 +1037,30 @@
             document.querySelectorAll('.layer-card').forEach(el => {
                 el.style.transform = '';
             });
+        }
+
+        // Toggle layer expansion (accordion)
+        function toggleLayerExpansion(index) {
+            const card = document.getElementById(`layer-${index}`);
+            const isExpanded = card.classList.contains('expanded');
+
+            // Close all other expanded cards
+            document.querySelectorAll('.layer-card.expanded').forEach(el => {
+                if (el !== card) {
+                    el.classList.remove('expanded');
+                }
+            });
+
+            // Toggle current card
+            if (isExpanded) {
+                card.classList.remove('expanded');
+            } else {
+                card.classList.add('expanded');
+                // Smooth scroll to the card
+                setTimeout(() => {
+                    card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }, 100);
+            }
         }
 
         // Show tooltip
