@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kernel Lens - Data Transformation Visualizer</title>
+    <title>Kernel Lens - Immersive Data Transformation Visualizer</title>
     <style>
         * {
             margin: 0;
@@ -32,6 +32,12 @@
             text-align: center;
             margin-bottom: 20px;
             flex-shrink: 0;
+            transition: all 0.5s;
+        }
+
+        .header.zoomed {
+            opacity: 0.3;
+            transform: scale(0.8);
         }
 
         .header h1 {
@@ -60,6 +66,13 @@
             margin-bottom: 20px;
             backdrop-filter: blur(10px);
             flex-shrink: 0;
+            transition: all 0.5s;
+        }
+
+        .controls.zoomed {
+            opacity: 0.2;
+            transform: scale(0.9);
+            pointer-events: none;
         }
 
         .control-row {
@@ -128,19 +141,20 @@
         .viz-area {
             flex: 1;
             display: flex;
-            flex-direction: column;
-            overflow: hidden;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: visible;
         }
 
-        /* Birds-eye View Flow */
+        /* Flow Container */
         .flow-container {
             position: relative;
-            padding: 40px 20px 20px;
-            background: rgba(30, 37, 66, 0.4);
-            border: 1px solid #283593;
-            border-radius: 12px;
-            margin-bottom: 20px;
-            flex-shrink: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .flow-stages {
@@ -151,7 +165,27 @@
             position: relative;
         }
 
-        /* Compact Data Block - Birds Eye View */
+        /* Backdrop when zoomed */
+        .backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.5s;
+            z-index: 10;
+        }
+
+        .backdrop.visible {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        /* Data Block - Compact by default, expandable */
         .data-block {
             background: linear-gradient(135deg, #1e2542 0%, #252d4a 100%);
             border: 2px solid #3949ab;
@@ -160,16 +194,17 @@
             width: 90px;
             min-height: 100px;
             position: relative;
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
             cursor: pointer;
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
+            justify-content: flex-start;
             text-align: center;
+            z-index: 1;
         }
 
-        .data-block:hover {
+        .data-block:hover:not(.zoomed) {
             transform: translateY(-8px) scale(1.08);
             border-color: #667eea;
             box-shadow: 0 15px 40px rgba(102, 126, 234, 0.5);
@@ -182,25 +217,48 @@
             animation: pulse-glow 2s ease-in-out infinite;
         }
 
-        .data-block.selected {
+        /* Zoomed state */
+        .data-block.zoomed {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(4.5) !important;
+            width: 120px;
+            min-height: 140px;
+            padding: 20px;
             border-color: #ffd700;
-            box-shadow: 0 0 30px rgba(255, 215, 0, 0.6);
+            box-shadow: 0 20px 80px rgba(255, 215, 0, 0.6);
+            z-index: 100;
+            cursor: default;
+            overflow: visible;
+        }
+
+        /* Shrunk state (context blocks) */
+        .data-block.shrunk {
+            opacity: 0.15;
+            transform: scale(0.6);
+            filter: blur(1px);
+            pointer-events: none;
         }
 
         @keyframes pulse-glow {
             0%, 100% {
                 box-shadow: 0 0 30px rgba(76, 175, 80, 0.8);
-                transform: scale(1);
             }
             50% {
                 box-shadow: 0 0 45px rgba(76, 175, 80, 1);
-                transform: scale(1.05);
             }
         }
 
         .data-icon {
             font-size: 24px;
             margin-bottom: 8px;
+            transition: all 0.6s;
+        }
+
+        .data-block.zoomed .data-icon {
+            font-size: 16px;
+            margin-bottom: 4px;
         }
 
         .data-label {
@@ -210,6 +268,12 @@
             letter-spacing: 0.5px;
             font-weight: 800;
             margin-bottom: 8px;
+            transition: all 0.6s;
+        }
+
+        .data-block.zoomed .data-label {
+            font-size: 7px;
+            margin-bottom: 4px;
         }
 
         .data-key-value {
@@ -217,6 +281,117 @@
             color: #4caf50;
             font-family: 'Courier New', monospace;
             font-weight: 700;
+            transition: all 0.6s;
+        }
+
+        .data-block.zoomed .data-key-value {
+            font-size: 8px;
+        }
+
+        /* Detail content - hidden by default, shown when zoomed */
+        .detail-content {
+            opacity: 0;
+            pointer-events: none;
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            margin-top: 8px;
+            width: 280px;
+            background: rgba(15, 15, 35, 0.98);
+            border: 2px solid #667eea;
+            border-radius: 12px;
+            padding: 16px;
+            transition: all 0.6s;
+            font-size: 10px;
+            text-align: left;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+        }
+
+        .data-block.zoomed .detail-content {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .detail-content h4 {
+            font-size: 11px;
+            color: #667eea;
+            margin-bottom: 8px;
+            font-weight: 700;
+        }
+
+        .detail-section {
+            margin-bottom: 12px;
+        }
+
+        .detail-section-title {
+            font-size: 9px;
+            color: #5c6bc0;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+            font-weight: 700;
+        }
+
+        .detail-field {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 4px;
+            font-size: 9px;
+            line-height: 1.5;
+        }
+
+        .detail-field-key {
+            color: #9fa8da;
+            font-weight: 600;
+        }
+
+        .detail-field-value {
+            color: #4caf50;
+            font-family: 'Courier New', monospace;
+            font-weight: 700;
+        }
+
+        .detail-code {
+            background: #0f0f23;
+            border: 1px solid #283593;
+            border-radius: 4px;
+            padding: 8px;
+            font-size: 8px;
+            color: #e8eaf6;
+            font-family: 'Courier New', monospace;
+            line-height: 1.4;
+            overflow-x: auto;
+            margin-top: 8px;
+        }
+
+        .close-zoom {
+            position: absolute;
+            top: -30px;
+            right: -30px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid #667eea;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 14px;
+            color: #e8eaf6;
+            opacity: 0;
+            transition: all 0.3s;
+            z-index: 1000;
+        }
+
+        .data-block.zoomed .close-zoom {
+            opacity: 1;
+        }
+
+        .close-zoom:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: scale(1.1);
         }
 
         /* Transformation Arrow - Compact */
@@ -226,8 +401,14 @@
             height: 2px;
             background: linear-gradient(90deg, #3949ab 0%, #5c6bc0 100%);
             opacity: 0.4;
-            transition: all 0.4s;
+            transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
             flex-shrink: 0;
+            z-index: 1;
+        }
+
+        .transform-arrow.shrunk {
+            opacity: 0.1;
+            transform: scale(0.6);
         }
 
         .transform-arrow.active {
@@ -318,143 +499,20 @@
             animation-delay: 0.5s;
         }
 
-        /* Detail Panel - Appears when clicking a block */
-        .detail-panel {
-            background: rgba(30, 37, 66, 0.95);
-            border: 2px solid #3949ab;
-            border-radius: 12px;
-            padding: 24px;
-            flex: 1;
-            overflow-y: auto;
+        /* Helper text */
+        .helper-text {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 12px;
+            color: #9fa8da;
+            opacity: 0.6;
+            transition: all 0.5s;
+        }
+
+        .helper-text.hidden {
             opacity: 0;
-            transform: translateY(20px);
-            transition: all 0.4s;
-            pointer-events: none;
-        }
-
-        .detail-panel.visible {
-            opacity: 1;
-            transform: translateY(0);
-            pointer-events: all;
-        }
-
-        .detail-header {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 20px;
-            padding-bottom: 12px;
-            border-bottom: 2px solid #3949ab;
-        }
-
-        .detail-icon {
-            font-size: 32px;
-        }
-
-        .detail-title {
-            flex: 1;
-        }
-
-        .detail-title h3 {
-            font-size: 20px;
-            color: #667eea;
-            margin-bottom: 4px;
-        }
-
-        .detail-title p {
-            font-size: 12px;
-            color: #9fa8da;
-        }
-
-        .detail-close {
-            background: rgba(255, 255, 255, 0.1);
-            border: none;
-            border-radius: 6px;
-            padding: 6px 12px;
-            color: #e8eaf6;
-            font-size: 11px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .detail-close:hover {
-            background: rgba(255, 255, 255, 0.2);
-        }
-
-        .detail-content {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 16px;
-        }
-
-        .detail-section {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid #3949ab;
-            border-radius: 8px;
-            padding: 16px;
-        }
-
-        .detail-section h4 {
-            font-size: 12px;
-            color: #5c6bc0;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 12px;
-            font-weight: 700;
-        }
-
-        .detail-field {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 8px;
-            font-size: 13px;
-            line-height: 1.6;
-        }
-
-        .detail-field-key {
-            color: #9fa8da;
-            font-weight: 600;
-        }
-
-        .detail-field-value {
-            color: #4caf50;
-            font-family: 'Courier New', monospace;
-            font-weight: 700;
-        }
-
-        .detail-code {
-            background: #0f0f23;
-            border: 1px solid #283593;
-            border-radius: 6px;
-            padding: 12px;
-            font-size: 11px;
-            color: #e8eaf6;
-            font-family: 'Courier New', monospace;
-            line-height: 1.5;
-            overflow-x: auto;
-            margin-top: 12px;
-        }
-
-        /* Placeholder when no block selected */
-        .detail-placeholder {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100%;
-            color: #5c6bc0;
-            text-align: center;
-        }
-
-        .detail-placeholder-icon {
-            font-size: 48px;
-            margin-bottom: 16px;
-            opacity: 0.5;
-        }
-
-        .detail-placeholder-text {
-            font-size: 14px;
-            color: #9fa8da;
         }
 
         /* Responsive */
@@ -466,6 +524,10 @@
 
             .transform-arrow {
                 display: none;
+            }
+
+            .data-block.zoomed {
+                transform: translate(-50%, -50%) scale(3.5) !important;
             }
         }
 
@@ -483,17 +545,27 @@
                 width: 80px;
                 min-height: 90px;
             }
+
+            .data-block.zoomed {
+                transform: translate(-50%, -50%) scale(3) !important;
+            }
+
+            .detail-content {
+                width: 220px;
+            }
         }
     </style>
 </head>
 <body>
+    <div class="backdrop" id="backdrop" onclick="closeZoom()"></div>
+
     <div class="container">
-        <div class="header">
+        <div class="header" id="header">
             <h1>🔍 Kernel Lens</h1>
-            <p>Click any stage to see how data transforms through the kernel</p>
+            <p>Click any stage to zoom in and explore</p>
         </div>
 
-        <div class="controls">
+        <div class="controls" id="controls">
             <div class="control-row">
                 <div class="control-group">
                     <label>System Call:</label>
@@ -529,207 +601,207 @@
         <div class="viz-area">
             <div class="flow-container">
                 <div class="flow-stages" id="flowStages">
-                    <!-- Stage 1: User Input -->
-                    <div class="data-block" data-stage="0" onclick="selectStage(0)">
-                        <div class="data-icon">👤</div>
-                        <div class="data-label">User</div>
-                        <div class="data-key-value" id="user-fd-compact">fd:3</div>
-                    </div>
-
-                    <div class="transform-arrow" data-arrow="0">
-                        <div class="transform-label">SYSCALL</div>
-                        <div class="flow-particle"></div>
-                        <div class="flow-particle"></div>
-                    </div>
-
-                    <!-- Stage 2: Kernel -->
-                    <div class="data-block" data-stage="1" onclick="selectStage(1)">
-                        <div class="data-icon">🚪</div>
-                        <div class="data-label">Kernel</div>
-                        <div class="data-key-value">ring:0</div>
-                    </div>
-
-                    <div class="transform-arrow" data-arrow="1">
-                        <div class="transform-label">VFS</div>
-                        <div class="flow-particle"></div>
-                        <div class="flow-particle"></div>
-                    </div>
-
-                    <!-- Stage 3: File -->
-                    <div class="data-block" data-stage="2" onclick="selectStage(2)">
-                        <div class="data-icon">📂</div>
-                        <div class="data-label">File</div>
-                        <div class="data-key-value">/etc/…</div>
-                    </div>
-
-                    <div class="transform-arrow" data-arrow="2">
-                        <div class="transform-label">FS</div>
-                        <div class="flow-particle"></div>
-                        <div class="flow-particle"></div>
-                    </div>
-
-                    <!-- Stage 4: Inode -->
-                    <div class="data-block" data-stage="3" onclick="selectStage(3)">
-                        <div class="data-icon">💾</div>
-                        <div class="data-label">Inode</div>
-                        <div class="data-key-value" id="cache-status-compact">HIT</div>
-                    </div>
-
-                    <div class="transform-arrow" data-arrow="3">
-                        <div class="transform-label">BLOCK</div>
-                        <div class="flow-particle"></div>
-                        <div class="flow-particle"></div>
-                    </div>
-
-                    <!-- Stage 5: I/O -->
-                    <div class="data-block" data-stage="4" onclick="selectStage(4)">
-                        <div class="data-icon">⚙️</div>
-                        <div class="data-label">I/O</div>
-                        <div class="data-key-value" id="io-ops-compact">1 op</div>
-                    </div>
-
-                    <div class="transform-arrow" data-arrow="4">
-                        <div class="transform-label">DMA</div>
-                        <div class="flow-particle"></div>
-                        <div class="flow-particle"></div>
-                    </div>
-
-                    <!-- Stage 6: Data -->
-                    <div class="data-block" data-stage="5" onclick="selectStage(5)">
-                        <div class="data-icon">📦</div>
-                        <div class="data-label">Data</div>
-                        <div class="data-key-value" id="data-bytes-compact">4KB</div>
-                    </div>
-
-                    <div class="transform-arrow" data-arrow="5">
-                        <div class="transform-label">RETURN</div>
-                        <div class="flow-particle"></div>
-                        <div class="flow-particle"></div>
-                    </div>
-
-                    <!-- Stage 7: Result -->
-                    <div class="data-block" data-stage="6" onclick="selectStage(6)">
-                        <div class="data-icon">↩️</div>
-                        <div class="data-label">Result</div>
-                        <div class="data-key-value" id="result-time-compact">125μs</div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="detail-panel" id="detailPanel">
-                <div class="detail-placeholder">
-                    <div class="detail-placeholder-icon">👆</div>
-                    <div class="detail-placeholder-text">Click any data block above to see detailed transformation info</div>
+                    <!-- Stages will be generated by JS -->
                 </div>
             </div>
         </div>
+
+        <div class="helper-text" id="helperText">Click any block to zoom in • Press ESC or click outside to zoom out</div>
     </div>
 
     <script>
-        const stageData = {
-            0: {
+        const stageData = [
+            {
                 icon: '👤',
+                label: 'User',
+                keyValue: 'fd:3',
+                keyValueId: 'user-fd-compact',
                 title: 'User Space Input',
-                description: 'Application initiates system call with parameters',
-                fields: [
-                    { section: 'Parameters', key: 'File Descriptor', value: '3' },
-                    { section: 'Parameters', key: 'Buffer Pointer', value: '0x7fff00001000' },
-                    { section: 'Parameters', key: 'Size', value: '4096 bytes' },
-                    { section: 'Context', key: 'Ring Level', value: '3 (User)' },
-                    { section: 'Context', key: 'Process ID', value: '1234' },
-                    { section: 'Context', key: 'CPU Mode', value: 'User mode' }
-                ],
+                description: 'Application initiates system call',
+                sections: {
+                    'Parameters': [
+                        { key: 'File Descriptor', value: '3', dynamic: 'fd' },
+                        { key: 'Buffer Pointer', value: '0x7fff00001000' },
+                        { key: 'Size', value: '4096 bytes', dynamic: 'size' }
+                    ],
+                    'Context': [
+                        { key: 'Ring Level', value: '3 (User)' },
+                        { key: 'Process ID', value: '1234' }
+                    ]
+                },
                 code: 'ssize_t bytes = read(fd, buffer, count);'
             },
-            1: {
+            {
                 icon: '🚪',
+                label: 'Kernel',
+                keyValue: 'ring:0',
                 title: 'System Call Interface',
-                description: 'Transition from user to kernel space',
-                fields: [
-                    { section: 'Transition', key: 'System Call', value: 'read (syscall #0)' },
-                    { section: 'Transition', key: 'Ring Switch', value: '3 → 0' },
-                    { section: 'Transition', key: 'Mode', value: 'Kernel mode' },
-                    { section: 'Execution', key: 'Handler', value: 'sys_read()' },
-                    { section: 'Execution', key: 'Time', value: '~1μs' },
-                    { section: 'Execution', key: 'Context Switches', value: '+1' }
-                ],
-                code: 'SYSCALL_DEFINE3(read, unsigned int, fd,\n    char __user *, buf, size_t, count)'
+                description: 'Transition to kernel space',
+                sections: {
+                    'Transition': [
+                        { key: 'System Call', value: 'read (syscall #0)' },
+                        { key: 'Ring Switch', value: '3 → 0' }
+                    ],
+                    'Execution': [
+                        { key: 'Handler', value: 'sys_read()' },
+                        { key: 'Time', value: '~1μs' }
+                    ]
+                },
+                code: 'SYSCALL_DEFINE3(read, ...)'
             },
-            2: {
+            {
                 icon: '📂',
+                label: 'File',
+                keyValue: '/etc/…',
                 title: 'File Object (VFS)',
-                description: 'Virtual File System resolves file descriptor',
-                fields: [
-                    { section: 'Resolution', key: 'FD Lookup', value: 'fdget_pos(3)' },
-                    { section: 'Resolution', key: 'File Path', value: '/etc/passwd' },
-                    { section: 'File Info', key: 'Inode', value: '524288' },
-                    { section: 'File Info', key: 'Mode', value: 'r-- (read-only)' },
-                    { section: 'File Info', key: 'Position', value: '0' },
-                    { section: 'File Info', key: 'Size', value: '2148 bytes' }
-                ],
-                code: 'struct file *file = fdt->fd[fd];\nstruct inode *inode = file->f_inode;'
+                description: 'VFS resolves file descriptor',
+                sections: {
+                    'Resolution': [
+                        { key: 'FD Lookup', value: 'fdget_pos(3)' },
+                        { key: 'File Path', value: '/etc/passwd' }
+                    ],
+                    'File Info': [
+                        { key: 'Inode', value: '524288' },
+                        { key: 'Mode', value: 'r-- (read-only)' }
+                    ]
+                },
+                code: 'struct file *file = fdt->fd[fd];'
             },
-            3: {
+            {
                 icon: '💾',
+                label: 'Inode',
+                keyValue: 'HIT',
+                keyValueId: 'cache-status-compact',
                 title: 'Inode & Blocks (ext4)',
-                description: 'Filesystem maps file to physical blocks',
-                fields: [
-                    { section: 'Inode', key: 'Inode Number', value: '524288' },
-                    { section: 'Inode', key: 'Block Count', value: '8 blocks' },
-                    { section: 'Mapping', key: 'Logical Block', value: '0' },
-                    { section: 'Mapping', key: 'Physical Block', value: '12345678' },
-                    { section: 'Cache', key: 'Page Cache', value: 'HIT (85%)' },
-                    { section: 'Cache', key: 'Pages Cached', value: '6/8 blocks' }
-                ],
-                code: 'page = find_get_page(mapping, index);\nif (!page) submit_bio(READ, bio);'
+                description: 'Filesystem maps to physical blocks',
+                sections: {
+                    'Inode': [
+                        { key: 'Inode Number', value: '524288' },
+                        { key: 'Block Count', value: '8 blocks' }
+                    ],
+                    'Cache': [
+                        { key: 'Page Cache', value: 'HIT (85%)', dynamic: 'cache' },
+                        { key: 'Pages Cached', value: '6/8 blocks' }
+                    ]
+                },
+                code: 'page = find_get_page(mapping, index);'
             },
-            4: {
+            {
                 icon: '⚙️',
+                label: 'I/O',
+                keyValue: '1 op',
+                keyValueId: 'io-ops-compact',
                 title: 'Block I/O Layer',
-                description: 'Block device I/O scheduling and execution',
-                fields: [
-                    { section: 'Request', key: 'Sector', value: '24576' },
-                    { section: 'Request', key: 'Operations', value: '1 read' },
-                    { section: 'Request', key: 'Size', value: '4096 bytes' },
-                    { section: 'Scheduling', key: 'Scheduler', value: 'mq-deadline' },
-                    { section: 'Scheduling', key: 'Queue Depth', value: '12/32' },
-                    { section: 'Scheduling', key: 'Wait Time', value: '~10μs' }
-                ],
-                code: 'struct bio *bio = bio_alloc(sector, size);\nsubmit_bio(READ, bio);'
+                description: 'Block device I/O scheduling',
+                sections: {
+                    'Request': [
+                        { key: 'Sector', value: '24576' },
+                        { key: 'Operations', value: '1 read', dynamic: 'ioOps' }
+                    ],
+                    'Scheduling': [
+                        { key: 'Scheduler', value: 'mq-deadline' },
+                        { key: 'Queue Depth', value: '12/32' }
+                    ]
+                },
+                code: 'submit_bio(READ, bio);'
             },
-            5: {
+            {
                 icon: '📦',
+                label: 'Data',
+                keyValue: '4KB',
+                keyValueId: 'data-bytes-compact',
                 title: 'Raw Data',
-                description: 'Actual file content retrieved from storage',
-                fields: [
-                    { section: 'Data', key: 'Bytes Read', value: '4096' },
-                    { section: 'Data', key: 'Content Preview', value: 'root:x:0:0:root...' },
-                    { section: 'Data', key: 'Validation', value: '✓ Valid' },
-                    { section: 'Transfer', key: 'DMA Active', value: 'Yes' },
-                    { section: 'Transfer', key: 'Memory Addr', value: '0xffff88001234000' },
-                    { section: 'Transfer', key: 'IRQ', value: '45 (complete)' }
-                ],
-                code: 'copy_to_user(buf, page_address(page), count);'
+                description: 'File content retrieved',
+                sections: {
+                    'Data': [
+                        { key: 'Bytes Read', value: '4096', dynamic: 'sizeDisplay' },
+                        { key: 'Content', value: 'root:x:0:0:root...' }
+                    ],
+                    'Transfer': [
+                        { key: 'DMA Active', value: 'Yes' },
+                        { key: 'IRQ', value: '45 (complete)' }
+                    ]
+                },
+                code: 'copy_to_user(buf, page, count);'
             },
-            6: {
+            {
                 icon: '↩️',
+                label: 'Result',
+                keyValue: '125μs',
+                keyValueId: 'result-time-compact',
                 title: 'Return to User',
-                description: 'Data and control returned to application',
-                fields: [
-                    { section: 'Result', key: 'Return Value', value: '4096 bytes' },
-                    { section: 'Result', key: 'Error Code', value: '0 (Success)' },
-                    { section: 'Result', key: 'Total Time', value: '125μs' },
-                    { section: 'Transition', key: 'Ring Switch', value: '0 → 3' },
-                    { section: 'Transition', key: 'CPU Mode', value: 'Back to user' },
-                    { section: 'Transition', key: 'Instruction', value: 'SYSRET' }
-                ],
+                description: 'Data returned to application',
+                sections: {
+                    'Result': [
+                        { key: 'Return Value', value: '4096 bytes', dynamic: 'sizeBytes' },
+                        { key: 'Error Code', value: '0 (Success)' },
+                        { key: 'Total Time', value: '125μs', dynamic: 'timeStr' }
+                    ],
+                    'Transition': [
+                        { key: 'Ring Switch', value: '0 → 3' },
+                        { key: 'Instruction', value: 'SYSRET' }
+                    ]
+                },
                 code: 'return count; // Returns to userspace'
             }
-        };
+        ];
 
         let currentStage = -1;
-        let selectedStage = null;
+        let zoomedStage = null;
         let animationInterval = null;
+
+        function init() {
+            renderStages();
+            updateParameters();
+            setTimeout(executeFlow, 500);
+        }
+
+        function renderStages() {
+            const container = document.getElementById('flowStages');
+            let html = '';
+
+            stageData.forEach((stage, i) => {
+                // Add data block
+                html += `
+                    <div class="data-block" data-stage="${i}" onclick="zoomIn(${i})">
+                        <div class="close-zoom" onclick="event.stopPropagation(); closeZoom();">✕</div>
+                        <div class="data-icon">${stage.icon}</div>
+                        <div class="data-label">${stage.label}</div>
+                        <div class="data-key-value" ${stage.keyValueId ? `id="${stage.keyValueId}"` : ''}>${stage.keyValue}</div>
+
+                        <div class="detail-content">
+                            <h4>${stage.title}</h4>
+                            <p style="color: #9fa8da; font-size: 9px; margin-bottom: 10px;">${stage.description}</p>
+                            ${Object.entries(stage.sections).map(([sectionName, fields]) => `
+                                <div class="detail-section">
+                                    <div class="detail-section-title">${sectionName}</div>
+                                    ${fields.map(f => `
+                                        <div class="detail-field">
+                                            <span class="detail-field-key">${f.key}:</span>
+                                            <span class="detail-field-value">${f.value}</span>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            `).join('')}
+                            <div class="detail-code">${stage.code}</div>
+                        </div>
+                    </div>
+                `;
+
+                // Add arrow (except after last block)
+                if (i < stageData.length - 1) {
+                    html += `
+                        <div class="transform-arrow" data-arrow="${i}">
+                            <div class="transform-label">${['SYSCALL', 'VFS', 'FS', 'BLOCK', 'DMA', 'RETURN'][i]}</div>
+                            <div class="flow-particle"></div>
+                            <div class="flow-particle"></div>
+                        </div>
+                    `;
+                }
+            });
+
+            container.innerHTML = html;
+        }
 
         function updateParameters() {
             const fd = document.getElementById('fd').value;
@@ -737,104 +809,96 @@
             const cache = document.getElementById('cache').value;
 
             // Update compact display
-            document.getElementById('user-fd-compact').textContent = `fd:${fd}`;
-            document.getElementById('cache-status-compact').textContent = cache === 'hot' ? 'HIT' : 'MISS';
+            const userFdEl = document.getElementById('user-fd-compact');
+            if (userFdEl) userFdEl.textContent = `fd:${fd}`;
+
+            const cacheStatusEl = document.getElementById('cache-status-compact');
+            if (cacheStatusEl) cacheStatusEl.textContent = cache === 'hot' ? 'HIT' : 'MISS';
 
             const ioOps = cache === 'hot' ? 0 : Math.ceil(size / 4096);
-            document.getElementById('io-ops-compact').textContent = ioOps === 0 ? 'cached' : `${ioOps} op${ioOps > 1 ? 's' : ''}`;
+            const ioOpsEl = document.getElementById('io-ops-compact');
+            if (ioOpsEl) ioOpsEl.textContent = ioOps === 0 ? 'cached' : `${ioOps} op${ioOps > 1 ? 's' : ''}`;
 
             const sizeKB = size >= 1024 ? (size / 1024).toFixed(0) + 'KB' : size + 'B';
-            document.getElementById('data-bytes-compact').textContent = sizeKB;
+            const dataBytesEl = document.getElementById('data-bytes-compact');
+            if (dataBytesEl) dataBytesEl.textContent = sizeKB;
 
             const baseTime = 125;
             const diskTime = cache === 'hot' ? 0 : ioOps * 8000;
             const totalTime = baseTime + diskTime;
             const timeStr = totalTime < 1000 ? totalTime + 'μs' : (totalTime / 1000).toFixed(1) + 'ms';
-            document.getElementById('result-time-compact').textContent = timeStr;
-
-            // Update stage data
-            stageData[0].fields[0].value = fd;
-            stageData[0].fields[2].value = size + ' bytes';
-            stageData[3].fields[4].value = cache === 'hot' ? 'HIT (85%)' : 'MISS (15%)';
-            stageData[4].fields[1].value = ioOps + ' read' + (ioOps !== 1 ? 's' : '');
-            stageData[5].fields[0].value = size;
-            stageData[6].fields[0].value = size + ' bytes';
-            stageData[6].fields[2].value = timeStr;
+            const resultTimeEl = document.getElementById('result-time-compact');
+            if (resultTimeEl) resultTimeEl.textContent = timeStr;
         }
 
-        function selectStage(stage) {
-            // Remove previous selection
-            document.querySelectorAll('.data-block').forEach(block => {
-                block.classList.remove('selected');
-            });
+        function zoomIn(stage) {
+            if (zoomedStage !== null) return; // Already zoomed
 
-            // Mark new selection
-            document.querySelector(`[data-stage="${stage}"]`).classList.add('selected');
-            selectedStage = stage;
+            zoomedStage = stage;
 
-            // Show detail panel
-            showDetailPanel(stage);
-        }
+            // Show backdrop
+            document.getElementById('backdrop').classList.add('visible');
 
-        function showDetailPanel(stage) {
-            const panel = document.getElementById('detailPanel');
-            const data = stageData[stage];
+            // Dim header and controls
+            document.getElementById('header').classList.add('zoomed');
+            document.getElementById('controls').classList.add('zoomed');
 
-            // Group fields by section
-            const sections = {};
-            data.fields.forEach(field => {
-                if (!sections[field.section]) {
-                    sections[field.section] = [];
+            // Hide helper text
+            document.getElementById('helperText').classList.add('hidden');
+
+            // Zoom selected block
+            const selectedBlock = document.querySelector(`[data-stage="${stage}"]`);
+            selectedBlock.classList.add('zoomed');
+
+            // Shrink other blocks
+            document.querySelectorAll('.data-block').forEach((block, i) => {
+                if (i !== stage) {
+                    block.classList.add('shrunk');
                 }
-                sections[field.section].push(field);
             });
 
-            // Build HTML
-            let sectionsHTML = '';
-            for (const [sectionName, fields] of Object.entries(sections)) {
-                sectionsHTML += `
-                    <div class="detail-section">
-                        <h4>${sectionName}</h4>
-                        ${fields.map(f => `
-                            <div class="detail-field">
-                                <span class="detail-field-key">${f.key}:</span>
-                                <span class="detail-field-value">${f.value}</span>
-                            </div>
-                        `).join('')}
-                    </div>
-                `;
-            }
-
-            panel.innerHTML = `
-                <div class="detail-header">
-                    <div class="detail-icon">${data.icon}</div>
-                    <div class="detail-title">
-                        <h3>${data.title}</h3>
-                        <p>${data.description}</p>
-                    </div>
-                    <button class="detail-close" onclick="closeDetailPanel()">Close</button>
-                </div>
-                <div class="detail-content">
-                    ${sectionsHTML}
-                </div>
-                <div class="detail-code">${data.code}</div>
-            `;
-
-            panel.classList.add('visible');
+            // Shrink arrows
+            document.querySelectorAll('.transform-arrow').forEach(arrow => {
+                arrow.classList.add('shrunk');
+            });
         }
 
-        function closeDetailPanel() {
-            const panel = document.getElementById('detailPanel');
-            panel.classList.remove('visible');
+        function closeZoom() {
+            if (zoomedStage === null) return;
 
+            // Hide backdrop
+            document.getElementById('backdrop').classList.remove('visible');
+
+            // Restore header and controls
+            document.getElementById('header').classList.remove('zoomed');
+            document.getElementById('controls').classList.remove('zoomed');
+
+            // Show helper text
+            document.getElementById('helperText').classList.remove('hidden');
+
+            // Un-zoom selected block
+            const selectedBlock = document.querySelector(`[data-stage="${zoomedStage}"]`);
+            selectedBlock.classList.remove('zoomed');
+
+            // Un-shrink other blocks
             document.querySelectorAll('.data-block').forEach(block => {
-                block.classList.remove('selected');
+                block.classList.remove('shrunk');
             });
 
-            selectedStage = null;
+            // Un-shrink arrows
+            document.querySelectorAll('.transform-arrow').forEach(arrow => {
+                arrow.classList.remove('shrunk');
+            });
+
+            zoomedStage = null;
         }
 
         function executeFlow() {
+            // Close zoom if open
+            if (zoomedStage !== null) {
+                closeZoom();
+            }
+
             // Stop any existing animation
             if (animationInterval) {
                 clearInterval(animationInterval);
@@ -860,7 +924,7 @@
             // Remove active class from previous stage
             if (currentStage >= 0) {
                 const prevBlock = document.querySelector(`[data-stage="${currentStage}"]`);
-                if (prevBlock && !prevBlock.classList.contains('selected')) {
+                if (prevBlock && !prevBlock.classList.contains('zoomed')) {
                     prevBlock.classList.remove('active');
                 }
                 if (currentStage > 0) {
@@ -874,7 +938,7 @@
             // Move to next stage
             currentStage++;
 
-            if (currentStage <= 6) {
+            if (currentStage < stageData.length) {
                 // Activate current arrow
                 if (currentStage > 0) {
                     const arrow = document.querySelector(`[data-arrow="${currentStage - 1}"]`);
@@ -892,18 +956,19 @@
                 // Schedule next stage
                 animationInterval = setTimeout(animateNextStage, 800);
             } else {
-                // Animation complete - keep last block active
-                const lastBlock = document.querySelector('[data-stage="6"]');
-                if (lastBlock && !lastBlock.classList.contains('selected')) {
+                // Animation complete
+                const lastBlock = document.querySelector(`[data-stage="${stageData.length - 1}"]`);
+                if (lastBlock && !lastBlock.classList.contains('zoomed')) {
                     lastBlock.classList.add('active');
                 }
             }
         }
 
-        // Auto-execute on page load
-        window.addEventListener('load', () => {
-            updateParameters();
-            setTimeout(executeFlow, 500);
+        // ESC key to close zoom
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && zoomedStage !== null) {
+                closeZoom();
+            }
         });
 
         // Update parameters when changed
@@ -913,6 +978,9 @@
                 el.addEventListener('change', updateParameters);
             }
         });
+
+        // Initialize on load
+        window.addEventListener('load', init);
     </script>
 </body>
 </html>
