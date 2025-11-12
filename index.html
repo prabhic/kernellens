@@ -36,7 +36,7 @@
         }
 
         .header.zoomed {
-            opacity: 0.3;
+            opacity: 0.2;
             transform: scale(0.8);
         }
 
@@ -70,7 +70,7 @@
         }
 
         .controls.zoomed {
-            opacity: 0.2;
+            opacity: 0.1;
             transform: scale(0.9);
             pointer-events: none;
         }
@@ -172,8 +172,8 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(0, 0, 0, 0.7);
-            backdrop-filter: blur(5px);
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(8px);
             opacity: 0;
             pointer-events: none;
             transition: opacity 0.5s;
@@ -185,7 +185,7 @@
             pointer-events: all;
         }
 
-        /* Data Block - Compact by default, expandable */
+        /* Data Block - Compact by default */
         .data-block {
             background: linear-gradient(135deg, #1e2542 0%, #252d4a 100%);
             border: 2px solid #3949ab;
@@ -211,33 +211,36 @@
             z-index: 10;
         }
 
-        .data-block.active {
+        .data-block.active:not(.zoomed) {
             border-color: #4caf50;
             box-shadow: 0 0 30px rgba(76, 175, 80, 0.8);
             animation: pulse-glow 2s ease-in-out infinite;
         }
 
-        /* Zoomed state */
+        /* Zoomed state - MUCH LARGER with details inside */
         .data-block.zoomed {
             position: fixed;
             top: 50%;
             left: 50%;
-            transform: translate(-50%, -50%) scale(4.5) !important;
-            width: 120px;
-            min-height: 140px;
-            padding: 20px;
+            transform: translate(-50%, -50%) !important;
+            width: 700px;
+            max-width: 90vw;
+            max-height: 85vh;
+            overflow-y: auto;
+            padding: 32px;
             border-color: #ffd700;
-            box-shadow: 0 20px 80px rgba(255, 215, 0, 0.6);
+            box-shadow: 0 30px 100px rgba(255, 215, 0, 0.6);
             z-index: 100;
             cursor: default;
-            overflow: visible;
+            text-align: left;
+            animation: none;
         }
 
         /* Shrunk state (context blocks) */
         .data-block.shrunk {
-            opacity: 0.15;
-            transform: scale(0.6);
-            filter: blur(1px);
+            opacity: 0.12;
+            transform: scale(0.5);
+            filter: blur(2px);
             pointer-events: none;
         }
 
@@ -250,15 +253,21 @@
             }
         }
 
+        /* Compact view elements */
+        .compact-view {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: opacity 0.3s;
+        }
+
+        .data-block.zoomed .compact-view {
+            display: none;
+        }
+
         .data-icon {
             font-size: 24px;
             margin-bottom: 8px;
-            transition: all 0.6s;
-        }
-
-        .data-block.zoomed .data-icon {
-            font-size: 16px;
-            margin-bottom: 4px;
         }
 
         .data-label {
@@ -268,12 +277,6 @@
             letter-spacing: 0.5px;
             font-weight: 800;
             margin-bottom: 8px;
-            transition: all 0.6s;
-        }
-
-        .data-block.zoomed .data-label {
-            font-size: 7px;
-            margin-bottom: 4px;
         }
 
         .data-key-value {
@@ -281,104 +284,134 @@
             color: #4caf50;
             font-family: 'Courier New', monospace;
             font-weight: 700;
-            transition: all 0.6s;
         }
 
-        .data-block.zoomed .data-key-value {
-            font-size: 8px;
-        }
-
-        /* Detail content - hidden by default, shown when zoomed */
-        .detail-content {
+        /* Detailed view - shown when zoomed */
+        .detailed-view {
+            display: none;
             opacity: 0;
-            pointer-events: none;
-            position: absolute;
-            top: 100%;
-            left: 50%;
-            transform: translateX(-50%);
-            margin-top: 8px;
-            width: 280px;
-            background: rgba(15, 15, 35, 0.98);
-            border: 2px solid #667eea;
-            border-radius: 12px;
-            padding: 16px;
-            transition: all 0.6s;
-            font-size: 10px;
-            text-align: left;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+            animation: fadeIn 0.5s forwards 0.3s;
         }
 
-        .data-block.zoomed .detail-content {
-            opacity: 1;
-            pointer-events: all;
+        .data-block.zoomed .detailed-view {
+            display: block;
         }
 
-        .detail-content h4 {
-            font-size: 11px;
-            color: #667eea;
-            margin-bottom: 8px;
-            font-weight: 700;
+        @keyframes fadeIn {
+            to {
+                opacity: 1;
+            }
         }
 
-        .detail-section {
-            margin-bottom: 12px;
+        .detailed-header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid #3949ab;
         }
 
-        .detail-section-title {
-            font-size: 9px;
-            color: #5c6bc0;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+        .detailed-icon {
+            font-size: 48px;
+        }
+
+        .detailed-title-group h3 {
+            font-size: 26px;
+            color: #ffd700;
             margin-bottom: 6px;
             font-weight: 700;
         }
 
-        .detail-field {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 4px;
-            font-size: 9px;
+        .detailed-title-group p {
+            font-size: 14px;
+            color: #9fa8da;
             line-height: 1.5;
         }
 
-        .detail-field-key {
+        .detailed-sections {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-bottom: 24px;
+        }
+
+        .detailed-section {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid #3949ab;
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .detailed-section-title {
+            font-size: 12px;
+            color: #667eea;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+            font-weight: 700;
+        }
+
+        .detailed-field {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 10px;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .detailed-field:last-child {
+            margin-bottom: 0;
+        }
+
+        .detailed-field-key {
             color: #9fa8da;
             font-weight: 600;
         }
 
-        .detail-field-value {
+        .detailed-field-value {
             color: #4caf50;
             font-family: 'Courier New', monospace;
             font-weight: 700;
+            text-align: right;
         }
 
-        .detail-code {
+        .detailed-code {
             background: #0f0f23;
-            border: 1px solid #283593;
-            border-radius: 4px;
-            padding: 8px;
-            font-size: 8px;
+            border: 2px solid #283593;
+            border-radius: 8px;
+            padding: 16px;
+            font-size: 13px;
             color: #e8eaf6;
             font-family: 'Courier New', monospace;
-            line-height: 1.4;
+            line-height: 1.6;
             overflow-x: auto;
-            margin-top: 8px;
+        }
+
+        .detailed-code-title {
+            font-size: 12px;
+            color: #667eea;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+            font-weight: 700;
         }
 
         .close-zoom {
             position: absolute;
-            top: -30px;
-            right: -30px;
+            top: 16px;
+            right: 16px;
             background: rgba(255, 255, 255, 0.1);
             border: 1px solid #667eea;
             border-radius: 50%;
-            width: 24px;
-            height: 24px;
+            width: 32px;
+            height: 32px;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            font-size: 14px;
+            font-size: 18px;
             color: #e8eaf6;
             opacity: 0;
             transition: all 0.3s;
@@ -391,10 +424,10 @@
 
         .close-zoom:hover {
             background: rgba(255, 255, 255, 0.2);
-            transform: scale(1.1);
+            transform: scale(1.15);
         }
 
-        /* Transformation Arrow - Compact */
+        /* Transformation Arrow */
         .transform-arrow {
             position: relative;
             width: 40px;
@@ -407,8 +440,8 @@
         }
 
         .transform-arrow.shrunk {
-            opacity: 0.1;
-            transform: scale(0.6);
+            opacity: 0.05;
+            transform: scale(0.5);
         }
 
         .transform-arrow.active {
@@ -509,10 +542,30 @@
             color: #9fa8da;
             opacity: 0.6;
             transition: all 0.5s;
+            z-index: 5;
         }
 
         .helper-text.hidden {
             opacity: 0;
+        }
+
+        /* Scrollbar styling for zoomed view */
+        .data-block.zoomed::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .data-block.zoomed::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 4px;
+        }
+
+        .data-block.zoomed::-webkit-scrollbar-thumb {
+            background: rgba(102, 126, 234, 0.5);
+            border-radius: 4px;
+        }
+
+        .data-block.zoomed::-webkit-scrollbar-thumb:hover {
+            background: rgba(102, 126, 234, 0.7);
         }
 
         /* Responsive */
@@ -527,7 +580,7 @@
             }
 
             .data-block.zoomed {
-                transform: translate(-50%, -50%) scale(3.5) !important;
+                width: 600px;
             }
         }
 
@@ -547,11 +600,17 @@
             }
 
             .data-block.zoomed {
-                transform: translate(-50%, -50%) scale(3) !important;
+                width: 95vw;
+                padding: 24px;
             }
 
-            .detail-content {
-                width: 220px;
+            .detailed-header {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .detailed-sections {
+                grid-template-columns: 1fr;
             }
         }
     </style>
@@ -617,7 +676,7 @@
                 keyValue: 'fd:3',
                 keyValueId: 'user-fd-compact',
                 title: 'User Space Input',
-                description: 'Application initiates system call',
+                description: 'Application initiates system call with parameters from user space (Ring 3). The parameters are validated and prepared for transition to kernel mode.',
                 sections: {
                     'Parameters': [
                         { key: 'File Descriptor', value: '3', dynamic: 'fd' },
@@ -626,46 +685,51 @@
                     ],
                     'Context': [
                         { key: 'Ring Level', value: '3 (User)' },
-                        { key: 'Process ID', value: '1234' }
+                        { key: 'Process ID', value: '1234' },
+                        { key: 'CPU Mode', value: 'User mode' }
                     ]
                 },
-                code: 'ssize_t bytes = read(fd, buffer, count);'
+                code: 'ssize_t bytes = read(fd, buffer, count);\n// Application calls libc wrapper\n// Parameters pushed to registers'
             },
             {
                 icon: '🚪',
                 label: 'Kernel',
                 keyValue: 'ring:0',
                 title: 'System Call Interface',
-                description: 'Transition to kernel space',
+                description: 'CPU transitions from Ring 3 (user) to Ring 0 (kernel) via SYSCALL instruction. The system call table is consulted to dispatch to the correct handler.',
                 sections: {
                     'Transition': [
                         { key: 'System Call', value: 'read (syscall #0)' },
-                        { key: 'Ring Switch', value: '3 → 0' }
+                        { key: 'Ring Switch', value: '3 → 0' },
+                        { key: 'Mode', value: 'Kernel mode' }
                     ],
                     'Execution': [
                         { key: 'Handler', value: 'sys_read()' },
-                        { key: 'Time', value: '~1μs' }
+                        { key: 'Time', value: '~1μs' },
+                        { key: 'Context Switches', value: '+1' }
                     ]
                 },
-                code: 'SYSCALL_DEFINE3(read, ...)'
+                code: 'SYSCALL_DEFINE3(read, unsigned int, fd,\n    char __user *, buf, size_t, count)\n{\n    // Kernel mode entry point\n}'
             },
             {
                 icon: '📂',
                 label: 'File',
                 keyValue: '/etc/…',
                 title: 'File Object (VFS)',
-                description: 'VFS resolves file descriptor',
+                description: 'Virtual File System resolves the file descriptor from the process file descriptor table to obtain the file structure pointer and inode.',
                 sections: {
                     'Resolution': [
                         { key: 'FD Lookup', value: 'fdget_pos(3)' },
-                        { key: 'File Path', value: '/etc/passwd' }
+                        { key: 'File Path', value: '/etc/passwd' },
+                        { key: 'Dentry Cache', value: 'HIT' }
                     ],
                     'File Info': [
                         { key: 'Inode', value: '524288' },
-                        { key: 'Mode', value: 'r-- (read-only)' }
+                        { key: 'Mode', value: 'r-- (read-only)' },
+                        { key: 'Position', value: '0' }
                     ]
                 },
-                code: 'struct file *file = fdt->fd[fd];'
+                code: 'struct file *file = fdt->fd[fd];\nstruct inode *inode = file->f_inode;\nif (!file_permission(file, MAY_READ))\n    return -EACCES;'
             },
             {
                 icon: '💾',
@@ -673,18 +737,25 @@
                 keyValue: 'HIT',
                 keyValueId: 'cache-status-compact',
                 title: 'Inode & Blocks (ext4)',
-                description: 'Filesystem maps to physical blocks',
+                description: 'Filesystem layer maps logical file blocks to physical disk blocks using extent trees. Page cache is checked for existing data before issuing disk I/O.',
                 sections: {
                     'Inode': [
                         { key: 'Inode Number', value: '524288' },
-                        { key: 'Block Count', value: '8 blocks' }
+                        { key: 'Block Count', value: '8 blocks' },
+                        { key: 'File System', value: 'ext4' }
+                    ],
+                    'Mapping': [
+                        { key: 'Logical Block', value: '0' },
+                        { key: 'Physical Block', value: '12345678' },
+                        { key: 'Extent', value: 'ext[0]: 8 blocks' }
                     ],
                     'Cache': [
                         { key: 'Page Cache', value: 'HIT (85%)', dynamic: 'cache' },
-                        { key: 'Pages Cached', value: '6/8 blocks' }
+                        { key: 'Pages Cached', value: '6/8 blocks' },
+                        { key: 'Cache Time', value: '<1μs' }
                     ]
                 },
-                code: 'page = find_get_page(mapping, index);'
+                code: 'page = find_get_page(mapping, index);\nif (!page) {\n    // Cache miss - need disk I/O\n    submit_bio(READ, bio);\n} else {\n    // Cache hit - use cached data\n}'
             },
             {
                 icon: '⚙️',
@@ -692,18 +763,20 @@
                 keyValue: '1 op',
                 keyValueId: 'io-ops-compact',
                 title: 'Block I/O Layer',
-                description: 'Block device I/O scheduling',
+                description: 'Block device I/O scheduler organizes and optimizes disk requests. The BIO (block I/O) structure is created and queued for the device driver.',
                 sections: {
                     'Request': [
                         { key: 'Sector', value: '24576' },
-                        { key: 'Operations', value: '1 read', dynamic: 'ioOps' }
+                        { key: 'Operations', value: '1 read', dynamic: 'ioOps' },
+                        { key: 'Size', value: '4096 bytes' }
                     ],
                     'Scheduling': [
                         { key: 'Scheduler', value: 'mq-deadline' },
-                        { key: 'Queue Depth', value: '12/32' }
+                        { key: 'Queue Depth', value: '12/32' },
+                        { key: 'Wait Time', value: '~10μs' }
                     ]
                 },
-                code: 'submit_bio(READ, bio);'
+                code: 'struct bio *bio = bio_alloc(sector, size);\nbio->bi_bdev = bdev;\nbio->bi_opf = READ;\nsubmit_bio(bio);'
             },
             {
                 icon: '📦',
@@ -711,18 +784,20 @@
                 keyValue: '4KB',
                 keyValueId: 'data-bytes-compact',
                 title: 'Raw Data',
-                description: 'File content retrieved',
+                description: 'File content is retrieved from storage device via DMA transfer. Data is validated and prepared for copying to user space buffer.',
                 sections: {
                     'Data': [
                         { key: 'Bytes Read', value: '4096', dynamic: 'sizeDisplay' },
-                        { key: 'Content', value: 'root:x:0:0:root...' }
+                        { key: 'Content', value: 'root:x:0:0:root...' },
+                        { key: 'Validation', value: '✓ Valid' }
                     ],
                     'Transfer': [
                         { key: 'DMA Active', value: 'Yes' },
+                        { key: 'Memory Addr', value: '0xffff88001234000' },
                         { key: 'IRQ', value: '45 (complete)' }
                     ]
                 },
-                code: 'copy_to_user(buf, page, count);'
+                code: 'copy_to_user(buf, page_address(page), count);\n// Safe copy from kernel to user space\n// Validates user buffer accessibility'
             },
             {
                 icon: '↩️',
@@ -730,7 +805,7 @@
                 keyValue: '125μs',
                 keyValueId: 'result-time-compact',
                 title: 'Return to User',
-                description: 'Data returned to application',
+                description: 'Data is copied to user space buffer. CPU transitions back to Ring 3 and returns control to the application with the read count.',
                 sections: {
                     'Result': [
                         { key: 'Return Value', value: '4096 bytes', dynamic: 'sizeBytes' },
@@ -739,10 +814,11 @@
                     ],
                     'Transition': [
                         { key: 'Ring Switch', value: '0 → 3' },
+                        { key: 'CPU Mode', value: 'Back to user' },
                         { key: 'Instruction', value: 'SYSRET' }
                     ]
                 },
-                code: 'return count; // Returns to userspace'
+                code: 'return count; // Returns to userspace\n// SYSRET instruction switches to Ring 3\n// Application continues execution'
             }
         ];
 
@@ -761,29 +837,48 @@
             let html = '';
 
             stageData.forEach((stage, i) => {
+                // Build sections HTML
+                let sectionsHTML = '';
+                for (const [sectionName, fields] of Object.entries(stage.sections)) {
+                    sectionsHTML += `
+                        <div class="detailed-section">
+                            <div class="detailed-section-title">${sectionName}</div>
+                            ${fields.map(f => `
+                                <div class="detailed-field">
+                                    <span class="detailed-field-key">${f.key}:</span>
+                                    <span class="detailed-field-value">${f.value}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    `;
+                }
+
                 // Add data block
                 html += `
                     <div class="data-block" data-stage="${i}" onclick="zoomIn(${i})">
                         <div class="close-zoom" onclick="event.stopPropagation(); closeZoom();">✕</div>
-                        <div class="data-icon">${stage.icon}</div>
-                        <div class="data-label">${stage.label}</div>
-                        <div class="data-key-value" ${stage.keyValueId ? `id="${stage.keyValueId}"` : ''}>${stage.keyValue}</div>
 
-                        <div class="detail-content">
-                            <h4>${stage.title}</h4>
-                            <p style="color: #9fa8da; font-size: 9px; margin-bottom: 10px;">${stage.description}</p>
-                            ${Object.entries(stage.sections).map(([sectionName, fields]) => `
-                                <div class="detail-section">
-                                    <div class="detail-section-title">${sectionName}</div>
-                                    ${fields.map(f => `
-                                        <div class="detail-field">
-                                            <span class="detail-field-key">${f.key}:</span>
-                                            <span class="detail-field-value">${f.value}</span>
-                                        </div>
-                                    `).join('')}
+                        <!-- Compact view (default) -->
+                        <div class="compact-view">
+                            <div class="data-icon">${stage.icon}</div>
+                            <div class="data-label">${stage.label}</div>
+                            <div class="data-key-value" ${stage.keyValueId ? `id="${stage.keyValueId}"` : ''}>${stage.keyValue}</div>
+                        </div>
+
+                        <!-- Detailed view (when zoomed) -->
+                        <div class="detailed-view">
+                            <div class="detailed-header">
+                                <div class="detailed-icon">${stage.icon}</div>
+                                <div class="detailed-title-group">
+                                    <h3>${stage.title}</h3>
+                                    <p>${stage.description}</p>
                                 </div>
-                            `).join('')}
-                            <div class="detail-code">${stage.code}</div>
+                            </div>
+                            <div class="detailed-sections">
+                                ${sectionsHTML}
+                            </div>
+                            <div class="detailed-code-title">Kernel Code</div>
+                            <div class="detailed-code">${stage.code}</div>
                         </div>
                     </div>
                 `;
@@ -849,6 +944,7 @@
             // Zoom selected block
             const selectedBlock = document.querySelector(`[data-stage="${stage}"]`);
             selectedBlock.classList.add('zoomed');
+            selectedBlock.classList.remove('active'); // Remove animation
 
             // Shrink other blocks
             document.querySelectorAll('.data-block').forEach((block, i) => {
@@ -949,7 +1045,7 @@
 
                 // Activate current block
                 const currentBlock = document.querySelector(`[data-stage="${currentStage}"]`);
-                if (currentBlock) {
+                if (currentBlock && !currentBlock.classList.contains('zoomed')) {
                     currentBlock.classList.add('active');
                 }
 
