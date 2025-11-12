@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kernel Lens - Visual Kernel Execution Map</title>
+    <title>Kernel Lens - Interactive Kernel Visualization</title>
     <style>
         * {
             margin: 0;
@@ -15,243 +15,328 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
             background: #0a0e27;
             color: #e0e0e0;
-            overflow-x: auto;
-            padding: 20px;
+            overflow: hidden;
+            height: 100vh;
         }
 
-        header {
-            text-align: center;
-            padding: 30px 20px;
-            margin-bottom: 30px;
+        /* Cinematic container - fixed viewport */
+        .cinema-frame {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
 
-        h1 {
-            font-size: 2.5em;
+        /* Top controls bar */
+        .top-bar {
             background: linear-gradient(135deg, #667eea, #764ba2);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            margin-bottom: 10px;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
         }
 
-        .subtitle {
-            color: #9fa8da;
-            font-size: 1.1em;
+        .title {
+            font-size: 1.8em;
+            font-weight: 800;
+            color: white;
         }
 
         .controls {
-            background: #1a1f3a;
-            border: 2px solid #2d3561;
-            border-radius: 12px;
-            padding: 20px;
-            margin: 0 auto 40px;
-            max-width: 1200px;
             display: flex;
             gap: 15px;
             align-items: center;
-            flex-wrap: wrap;
         }
 
         .control-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .control-group label {
+            font-size: 0.85em;
+            color: rgba(255,255,255,0.9);
+            font-weight: 600;
+        }
+
+        input, select {
+            padding: 6px 10px;
+            background: rgba(255,255,255,0.15);
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 6px;
+            color: white;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+
+        input::placeholder {
+            color: rgba(255,255,255,0.5);
+        }
+
+        button {
+            padding: 8px 20px;
+            background: rgba(255,255,255,0.2);
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 6px;
+            color: white;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        button:hover {
+            background: rgba(255,255,255,0.3);
+            transform: translateY(-1px);
+        }
+
+        /* Main visualization area - fits in viewport */
+        .viz-stage {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 250px 1fr 250px;
+            gap: 20px;
+            padding: 20px;
+            overflow: hidden;
+        }
+
+        /* Left sidebar - input/output */
+        .sidebar {
+            background: #151a35;
+            border: 2px solid #2d3561;
+            border-radius: 12px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .sidebar-title {
+            font-size: 0.9em;
+            font-weight: 700;
+            color: #9fa8da;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 5px;
+        }
+
+        .data-card {
+            background: #1a1f3a;
+            border: 2px solid #3d4575;
+            border-radius: 10px;
+            padding: 15px;
+            transition: all 0.3s;
+        }
+
+        .data-card.active {
+            border-color: currentColor;
+            box-shadow: 0 0 20px currentColor;
+        }
+
+        .data-card-label {
+            font-size: 0.75em;
+            color: #9fa8da;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .data-card-content {
+            font-family: 'Courier New', monospace;
+            font-size: 0.85em;
+            line-height: 1.6;
+        }
+
+        .data-field {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+
+        .data-field-name {
+            color: #9fa8da;
+        }
+
+        .data-field-value {
+            color: currentColor;
+            font-weight: 700;
+        }
+
+        /* Center - transformation pipeline */
+        .pipeline {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-around;
+            gap: 10px;
+            padding: 20px 0;
+        }
+
+        .transform-step {
+            background: #151a35;
+            border: 2px solid #2d3561;
+            border-radius: 12px;
+            padding: 15px 20px;
+            display: grid;
+            grid-template-columns: 60px 1fr 150px;
+            gap: 15px;
+            align-items: center;
+            transition: all 0.4s;
+            position: relative;
+            cursor: pointer;
+        }
+
+        .transform-step:hover {
+            transform: translateX(5px);
+            border-color: currentColor;
+            box-shadow: 0 0 25px rgba(0,0,0,0.3);
+        }
+
+        .transform-step.active {
+            border-color: currentColor;
+            box-shadow: 0 0 30px currentColor;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.05));
+        }
+
+        .step-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: currentColor;
+            color: #0a0e27;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5em;
+            font-weight: 700;
+        }
+
+        .step-info {
             display: flex;
             flex-direction: column;
             gap: 5px;
         }
 
-        .control-group label {
-            font-size: 0.85em;
-            color: #9fa8da;
-            font-weight: 600;
+        .step-title {
+            font-size: 1em;
+            font-weight: 700;
+            color: #e0e0e0;
         }
 
-        input, select {
-            padding: 8px 12px;
-            background: #0a0e27;
-            border: 1px solid #2d3561;
-            border-radius: 6px;
-            color: #e0e0e0;
+        .step-desc {
+            font-size: 0.8em;
+            color: #9fa8da;
             font-family: 'Courier New', monospace;
         }
 
-        button {
-            padding: 10px 24px;
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            border: none;
-            border-radius: 6px;
-            color: white;
-            font-weight: 700;
-            cursor: pointer;
-            transition: transform 0.2s;
-        }
-
-        button:hover {
-            transform: translateY(-2px);
-        }
-
-        /* Main visualization canvas */
-        .viz-canvas {
-            position: relative;
-            margin: 0 auto;
-            padding: 40px;
-            min-height: 700px;
-            background: #0f1429;
-            border-radius: 16px;
-            border: 2px solid #2d3561;
-            overflow-x: auto;
-        }
-
-        /* Data transformation flow */
-        .transform-flow {
+        .step-timing {
+            text-align: right;
             display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 30px;
-            min-width: fit-content;
-            padding: 20px;
+            flex-direction: column;
+            gap: 3px;
         }
 
-        /* Data block - the key visual element */
-        .data-block {
-            position: relative;
-            background: #1a1f3a;
-            border: 2px solid #3d4575;
+        .step-time {
+            font-size: 1.4em;
+            font-weight: 700;
+            font-family: 'Courier New', monospace;
+            color: currentColor;
+        }
+
+        .step-label {
+            font-size: 0.7em;
+            color: #9fa8da;
+            text-transform: uppercase;
+        }
+
+        /* Flow indicator on left edge */
+        .transform-step::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 4px;
+            height: 100%;
+            background: currentColor;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .transform-step.active::before {
+            opacity: 1;
+        }
+
+        /* Connection lines between steps */
+        .connection-line {
+            width: 2px;
+            height: 10px;
+            background: linear-gradient(180deg, #2d3561, transparent);
+            margin: 0 auto;
+        }
+
+        /* Right sidebar - metrics */
+        .metrics-panel {
+            background: #151a35;
+            border: 2px solid #2d3561;
             border-radius: 12px;
             padding: 20px;
-            min-width: 180px;
-            transition: all 0.4s;
-            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
         }
 
-        .data-block:hover {
-            transform: scale(1.05);
-            border-color: currentColor;
-            box-shadow: 0 0 30px currentColor;
-            z-index: 10;
-        }
-
-        .data-block.active {
-            border-color: currentColor;
-            box-shadow: 0 0 40px currentColor, inset 0 0 20px rgba(255,255,255,0.1);
-            animation: pulse-block 2s infinite;
-        }
-
-        @keyframes pulse-block {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.03); }
-        }
-
-        .block-label {
-            font-size: 0.75em;
+        .metrics-title {
+            font-size: 0.9em;
+            font-weight: 700;
             color: #9fa8da;
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            margin-bottom: 8px;
-            font-weight: 600;
+            margin-bottom: 5px;
         }
 
-        .block-content {
+        .metric-item {
+            background: #1a1f3a;
+            border-radius: 8px;
+            padding: 12px;
+            border-left: 3px solid currentColor;
+        }
+
+        .metric-value {
+            font-size: 1.8em;
+            font-weight: 700;
             font-family: 'Courier New', monospace;
-            font-size: 0.9em;
-            color: #e0e0e0;
-            line-height: 1.6;
-        }
-
-        .block-value {
             color: currentColor;
-            font-weight: 700;
         }
 
-        .block-icon {
-            position: absolute;
-            top: -12px;
-            right: 10px;
-            background: currentColor;
-            color: #0a0e27;
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.1em;
-            font-weight: 700;
-        }
-
-        /* Transform arrow - shows the operation */
-        .transform-arrow {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 8px;
-            position: relative;
-        }
-
-        .arrow-line {
-            width: 60px;
-            height: 3px;
-            background: linear-gradient(90deg, transparent, currentColor, transparent);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .arrow-head {
-            width: 0;
-            height: 0;
-            border-left: 10px solid currentColor;
-            border-top: 6px solid transparent;
-            border-bottom: 6px solid transparent;
-        }
-
-        .arrow-label {
-            position: absolute;
-            top: -25px;
-            font-size: 0.7em;
+        .metric-label {
+            font-size: 0.75em;
             color: #9fa8da;
-            white-space: nowrap;
-            background: #0f1429;
-            padding: 2px 8px;
-            border-radius: 4px;
-            font-weight: 600;
+            margin-top: 3px;
         }
 
-        /* Flowing particle in arrow */
-        .arrow-particle {
-            position: absolute;
-            width: 6px;
+        .metric-bar {
+            margin-top: 8px;
+        }
+
+        .metric-bar-fill {
             height: 6px;
             background: currentColor;
-            border-radius: 50%;
-            box-shadow: 0 0 10px currentColor;
-            left: 0;
-            top: 50%;
-            transform: translateY(-50%);
-            opacity: 0;
+            border-radius: 3px;
+            transition: width 0.6s;
         }
 
-        .transform-arrow.active .arrow-particle {
-            animation: flow-right 1.5s ease-in-out infinite;
-        }
-
-        @keyframes flow-right {
-            0% { left: 0; opacity: 0; }
-            10% { opacity: 1; }
-            90% { opacity: 1; }
-            100% { left: 100%; opacity: 0; }
-        }
-
-        /* Tooltip for hover details */
+        /* Tooltip */
         .tooltip {
             position: fixed;
             background: #1a1f3a;
             border: 2px solid currentColor;
             border-radius: 10px;
             padding: 15px;
-            max-width: 350px;
+            max-width: 320px;
             pointer-events: none;
             opacity: 0;
             transition: opacity 0.2s;
             z-index: 1000;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.7);
         }
 
         .tooltip.show {
@@ -277,31 +362,10 @@
             padding: 8px;
             border-radius: 6px;
             font-family: 'Courier New', monospace;
-            font-size: 0.8em;
-            color: #a0a0a0;
-            border-left: 3px solid currentColor;
-        }
-
-        /* Layer labels on the side */
-        .layer-labels {
-            position: absolute;
-            left: 20px;
-            top: 50%;
-            transform: translateY(-50%);
-            display: flex;
-            flex-direction: column;
-            gap: 100px;
-        }
-
-        .layer-label {
             font-size: 0.75em;
-            color: #6c7293;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            writing-mode: vertical-rl;
-            text-orientation: mixed;
-            font-weight: 700;
-            opacity: 0.6;
+            color: #a0a0a0;
+            white-space: pre;
+            line-height: 1.4;
         }
 
         /* Color scheme */
@@ -312,372 +376,307 @@
         .color-block { color: #fee140; }
         .color-device { color: #30cfd0; }
 
-        /* Info panel */
-        .info-panel {
-            max-width: 1200px;
-            margin: 30px auto;
-            padding: 20px;
-            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
-            border: 2px solid #667eea;
-            border-radius: 12px;
+        /* Animations */
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
         }
 
-        .info-panel h3 {
-            color: #667eea;
-            margin-bottom: 10px;
+        .pulsing {
+            animation: pulse 2s infinite;
         }
 
-        .info-panel p {
-            color: #c0c0c0;
-            line-height: 1.6;
-        }
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .viz-stage {
+                grid-template-columns: 1fr;
+                overflow-y: auto;
+            }
 
-        /* Metrics summary */
-        .metrics-summary {
-            max-width: 1200px;
-            margin: 20px auto;
-            display: flex;
-            gap: 15px;
-            flex-wrap: wrap;
-        }
-
-        .metric-card {
-            flex: 1;
-            min-width: 150px;
-            background: #1a1f3a;
-            border: 2px solid #2d3561;
-            border-radius: 10px;
-            padding: 15px;
-            text-align: center;
-        }
-
-        .metric-value {
-            font-size: 2em;
-            font-weight: 700;
-            font-family: 'Courier New', monospace;
-            color: currentColor;
-        }
-
-        .metric-label {
-            font-size: 0.8em;
-            color: #9fa8da;
-            margin-top: 5px;
+            .sidebar, .metrics-panel {
+                max-height: none;
+            }
         }
     </style>
 </head>
 <body>
-    <header>
-        <h1>🔍 Kernel Lens</h1>
-        <div class="subtitle">Watch data transform through the Linux kernel</div>
-    </header>
-
-    <div class="info-panel">
-        <h3>💡 How it works</h3>
-        <p>
-            Below is a visual map of kernel execution. Each box represents data at a specific stage.
-            Watch how <strong>fd=3</strong> transforms into <strong>file structure</strong>, then into <strong>inode data</strong>,
-            then into <strong>block numbers</strong>, and finally into <strong>actual bytes</strong>.
-            Hover over any box to see what's happening at that transformation.
-        </p>
-    </div>
-
-    <div class="controls">
-        <div class="control-group">
-            <label>System Call</label>
-            <select id="syscall">
-                <option value="read">read()</option>
-                <option value="write">write()</option>
-            </select>
+    <div class="cinema-frame">
+        <!-- Top bar -->
+        <div class="top-bar">
+            <div class="title">🔍 Kernel Lens</div>
+            <div class="controls">
+                <div class="control-group">
+                    <label>syscall:</label>
+                    <select id="syscall">
+                        <option value="read">read()</option>
+                        <option value="write">write()</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label>fd:</label>
+                    <input type="number" id="fd" value="3" style="width: 60px">
+                </div>
+                <div class="control-group">
+                    <label>size:</label>
+                    <input type="number" id="size" value="4096" style="width: 80px">
+                </div>
+                <button onclick="executeFlow()">⚡ Execute</button>
+            </div>
         </div>
-        <div class="control-group">
-            <label>File Descriptor</label>
-            <input type="number" id="fd" value="3" min="0" max="100">
-        </div>
-        <div class="control-group">
-            <label>Size (bytes)</label>
-            <input type="number" id="size" value="4096" min="1" max="1048576" step="1024">
-        </div>
-        <button onclick="executeFlow()">⚡ Execute & Visualize</button>
-    </div>
 
-    <div class="metrics-summary" id="metrics"></div>
+        <!-- Main visualization stage -->
+        <div class="viz-stage">
+            <!-- Left: Input data -->
+            <div class="sidebar">
+                <div class="sidebar-title">Input</div>
+                <div class="data-card color-user" id="input-card">
+                    <div class="data-card-label">User Space Call</div>
+                    <div class="data-card-content" id="input-content"></div>
+                </div>
 
-    <div class="viz-canvas">
-        <div class="transform-flow" id="flow"></div>
+                <div class="sidebar-title" style="margin-top: auto;">Output</div>
+                <div class="data-card color-user" id="output-card">
+                    <div class="data-card-label">Returned Data</div>
+                    <div class="data-card-content" id="output-content"></div>
+                </div>
+            </div>
+
+            <!-- Center: Transformation pipeline -->
+            <div class="pipeline" id="pipeline"></div>
+
+            <!-- Right: Metrics -->
+            <div class="metrics-panel">
+                <div class="metrics-title">Performance</div>
+                <div id="metrics-content"></div>
+            </div>
+        </div>
     </div>
 
     <div class="tooltip" id="tooltip"></div>
 
     <script>
-        const transformations = [
+        const transformSteps = [
             {
-                label: 'User Input',
-                icon: '👤',
-                color: 'color-user',
-                data: (params) => ({
-                    'syscall': 'read()',
-                    'fd': params.fd,
-                    'buffer': '*buf',
-                    'count': params.size
-                }),
-                tooltip: {
-                    title: 'User Space Call',
-                    desc: 'Application invokes read() system call with parameters. This is the entry point from user space.',
-                    code: `read(fd, buffer, count)`
-                }
-            },
-            {
-                arrow: 'syscall trap',
-                color: 'color-syscall'
-            },
-            {
-                label: 'System Call Entry',
+                id: 'syscall',
                 icon: '🚪',
+                title: 'System Call Entry',
+                desc: 'Ring 3 → Ring 0',
+                time: '1μs',
                 color: 'color-syscall',
-                data: (params) => ({
-                    'mode': 'Ring 0',
-                    'syscall#': '0 (read)',
-                    'rax': '0',
-                    'rdi': params.fd,
-                    'rsi': 'buf',
-                    'rdx': params.size
-                }),
                 tooltip: {
                     title: 'Kernel Mode Transition',
-                    desc: 'CPU switches from Ring 3 (user) to Ring 0 (kernel). Parameters copied from registers.',
-                    code: `SYSCALL instruction\nrax=0, rdi=fd, rsi=buf, rdx=count`
+                    desc: 'CPU switches privilege levels using SYSCALL instruction. Registers contain parameters.',
+                    code: 'SYSCALL instruction\nrax=0 (read), rdi=fd\nrsi=buf, rdx=count'
                 }
             },
             {
-                arrow: 'fd lookup',
-                color: 'color-vfs'
-            },
-            {
-                label: 'File Structure',
+                id: 'vfs',
                 icon: '📂',
+                title: 'VFS Lookup',
+                desc: 'fd → file*',
+                time: '0.5μs',
                 color: 'color-vfs',
-                data: (params) => ({
-                    'struct': 'file*',
-                    'path': '/etc/passwd',
-                    'inode': '524288',
-                    'f_pos': '0',
-                    'f_mode': 'FMODE_READ',
-                    'f_op': 'ext4_file_ops'
-                }),
                 tooltip: {
-                    title: 'VFS File Lookup',
-                    desc: 'File descriptor table maps fd to file structure. Contains path, inode, position, and operations.',
-                    code: `file = fdt->fd[${params.fd}]\ninode = file->f_inode`
+                    title: 'File Descriptor Resolution',
+                    desc: 'Maps file descriptor number to kernel file structure via FD table.',
+                    code: 'file = current->files->fdt->fd[3]\npath = file->f_path\ninode = file->f_inode'
                 }
             },
             {
-                arrow: 'inode load',
-                color: 'color-fs'
-            },
-            {
-                label: 'Inode Metadata',
+                id: 'fs',
                 icon: '💾',
+                title: 'Filesystem',
+                desc: 'inode → blocks',
+                time: '2μs',
                 color: 'color-fs',
-                data: (params) => ({
-                    'inode#': '524288',
-                    'size': '2148 bytes',
-                    'blocks': '8',
-                    'extent_tree': '[0-7]',
-                    'cache_pages': '6/8 (hit)',
-                    'dirty': 'false'
-                }),
                 tooltip: {
-                    title: 'Filesystem Metadata',
-                    desc: 'Inode contains file metadata and extent tree showing which logical blocks map to which physical blocks.',
-                    code: `ext4_inode_load(524288)\next4_extent_tree_lookup(offset=0)`
+                    title: 'Inode & Extent Lookup',
+                    desc: 'Loads inode metadata and extent tree. Maps logical file offsets to physical blocks.',
+                    code: 'inode = ext4_iget(524288)\nextents = inode->i_block\nlogical_blk = offset / 4096'
                 }
             },
             {
-                arrow: 'block map',
-                color: 'color-block'
-            },
-            {
-                label: 'Block Request',
+                id: 'block',
                 icon: '⚙️',
+                title: 'Block I/O',
+                desc: 'bio → queue',
+                time: '10μs',
                 color: 'color-block',
-                data: (params) => ({
-                    'type': 'bio_read',
-                    'sector': '98765424',
-                    'blocks': Math.ceil(params.size / 4096),
-                    'pages': Math.ceil(params.size / 4096),
-                    'queue': '12/32',
-                    'scheduler': 'mq-deadline'
-                }),
                 tooltip: {
-                    title: 'Block I/O Layer',
-                    desc: 'Extent tree maps logical blocks to physical sectors. I/O request queued for device driver.',
-                    code: `bio_alloc(sector=${98765424})\nblk_mq_submit_bio()`
+                    title: 'Block Layer Queueing',
+                    desc: 'Creates BIO request and submits to I/O scheduler. May merge with pending requests.',
+                    code: 'bio = bio_alloc(sector)\nbio->bi_end_io = complete\nblk_mq_submit_bio(bio)'
                 }
             },
             {
-                arrow: 'device I/O',
-                color: 'color-device'
-            },
-            {
-                label: 'Physical I/O',
+                id: 'device',
                 icon: '🔌',
+                title: 'Device Driver',
+                desc: 'SCSI → DMA',
+                time: '150μs',
                 color: 'color-device',
-                data: (params) => ({
-                    'device': '/dev/sda',
-                    'cmd': 'READ_10',
-                    'LBA': '98765424',
-                    'transfer': `${params.size} bytes`,
-                    'DMA': '0x1234abcd',
-                    'latency': '~150μs'
-                }),
                 tooltip: {
-                    title: 'Device Driver',
-                    desc: 'SCSI READ command sent to device. DMA transfer moves data directly to memory.',
-                    code: `scsi_read(LBA=${98765424})\nDMA: device → kernel buffer`
-                }
-            },
-            {
-                arrow: 'copy_to_user',
-                color: 'color-user'
-            },
-            {
-                label: 'Data Returned',
-                icon: '✅',
-                color: 'color-user',
-                data: (params) => ({
-                    'return': `${params.size} bytes`,
-                    'errno': '0 (success)',
-                    'time': '~175μs',
-                    'mode': 'Ring 3',
-                    'data': '✓ in buffer'
-                }),
-                tooltip: {
-                    title: 'Return to User Space',
-                    desc: 'Data copied from kernel buffer to user buffer. Control returns to application.',
-                    code: `copy_to_user(buf, kernel_buf)\nSYSRET instruction\nrax=${params.size}`
+                    title: 'Physical I/O Transfer',
+                    desc: 'Issues SCSI READ command to device. DMA transfers data directly to memory.',
+                    code: 'scsi_read(LBA, len)\nDMA: device → kernel_buf\nIRQ on completion'
                 }
             }
         ];
 
         let currentParams = { fd: 3, size: 4096 };
 
-        function renderFlow() {
-            const flow = document.getElementById('flow');
+        function updateInputOutput() {
             const fd = document.getElementById('fd').value;
             const size = document.getElementById('size').value;
-
             currentParams = { fd, size };
 
-            flow.innerHTML = transformations.map((t, i) => {
-                if (t.arrow) {
-                    return `
-                        <div class="transform-arrow ${t.color}" id="arrow-${i}">
-                            <div class="arrow-line">
-                                <div class="arrow-particle"></div>
-                            </div>
-                            <div class="arrow-head"></div>
-                            <div class="arrow-label">${t.arrow}</div>
-                        </div>
-                    `;
-                }
+            // Update input
+            document.getElementById('input-content').innerHTML = `
+                <div class="data-field">
+                    <span class="data-field-name">syscall:</span>
+                    <span class="data-field-value">read()</span>
+                </div>
+                <div class="data-field">
+                    <span class="data-field-name">fd:</span>
+                    <span class="data-field-value">${fd}</span>
+                </div>
+                <div class="data-field">
+                    <span class="data-field-name">buffer:</span>
+                    <span class="data-field-value">*buf</span>
+                </div>
+                <div class="data-field">
+                    <span class="data-field-name">count:</span>
+                    <span class="data-field-value">${size}</span>
+                </div>
+            `;
 
-                const data = t.data(currentParams);
-                const entries = Object.entries(data);
+            // Update output
+            const totalTime = 1 + 0.5 + 2 + 10 + 150;
+            document.getElementById('output-content').innerHTML = `
+                <div class="data-field">
+                    <span class="data-field-name">bytes:</span>
+                    <span class="data-field-value">${size}</span>
+                </div>
+                <div class="data-field">
+                    <span class="data-field-name">errno:</span>
+                    <span class="data-field-value">0</span>
+                </div>
+                <div class="data-field">
+                    <span class="data-field-name">time:</span>
+                    <span class="data-field-value">${totalTime}μs</span>
+                </div>
+                <div class="data-field">
+                    <span class="data-field-name">status:</span>
+                    <span class="data-field-value">✓</span>
+                </div>
+            `;
 
-                return `
-                    <div class="data-block ${t.color}" id="block-${i}"
-                         onmouseenter="showTooltip(event, ${i})"
-                         onmouseleave="hideTooltip()">
-                        <div class="block-icon">${t.icon}</div>
-                        <div class="block-label">${t.label}</div>
-                        <div class="block-content">
-                            ${entries.map(([k, v]) => `
-                                <div><span style="color: #9fa8da">${k}:</span> <span class="block-value">${v}</span></div>
-                            `).join('')}
-                        </div>
-                    </div>
-                `;
-            }).join('');
-
-            // Update metrics
             updateMetrics();
         }
 
+        function renderPipeline() {
+            const pipeline = document.getElementById('pipeline');
+
+            pipeline.innerHTML = transformSteps.map((step, i) => `
+                ${i > 0 ? '<div class="connection-line"></div>' : ''}
+                <div class="transform-step ${step.color}" id="step-${step.id}"
+                     onmouseenter="showTooltip(event, '${step.id}')"
+                     onmouseleave="hideTooltip()">
+                    <div class="step-icon">${step.icon}</div>
+                    <div class="step-info">
+                        <div class="step-title">${step.title}</div>
+                        <div class="step-desc">${step.desc}</div>
+                    </div>
+                    <div class="step-timing">
+                        <div class="step-time">${step.time}</div>
+                        <div class="step-label">latency</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
         function updateMetrics() {
-            const metrics = document.getElementById('metrics');
             const size = currentParams.size;
             const cacheHit = 85;
             const ioOps = Math.ceil((100 - cacheHit) / 100 * Math.ceil(size / 4096));
-            const totalTime = 1 + 0.5 + 2 + 10 + (ioOps * 150) + 1;
+            const totalTime = 1 + 0.5 + 2 + 10 + (ioOps * 150);
 
+            const metrics = document.getElementById('metrics-content');
             metrics.innerHTML = `
-                <div class="metric-card color-syscall">
+                <div class="metric-item color-syscall">
                     <div class="metric-value">${totalTime}μs</div>
                     <div class="metric-label">Total Time</div>
                 </div>
-                <div class="metric-card color-fs">
+
+                <div class="metric-item color-fs">
                     <div class="metric-value">${cacheHit}%</div>
                     <div class="metric-label">Cache Hit Rate</div>
+                    <div class="metric-bar">
+                        <div class="metric-bar-fill" style="width: ${cacheHit}%"></div>
+                    </div>
                 </div>
-                <div class="metric-card color-device">
+
+                <div class="metric-item color-device">
                     <div class="metric-value">${ioOps}</div>
                     <div class="metric-label">I/O Operations</div>
                 </div>
-                <div class="metric-card color-user">
-                    <div class="metric-value">${size}</div>
-                    <div class="metric-label">Bytes Read</div>
+
+                <div class="metric-item color-user">
+                    <div class="metric-value">${Math.ceil(size/1024)}KB</div>
+                    <div class="metric-label">Data Transfer</div>
                 </div>
             `;
         }
 
         function executeFlow() {
-            renderFlow();
+            updateInputOutput();
 
-            // Animate flow
-            const blocks = document.querySelectorAll('.data-block');
-            const arrows = document.querySelectorAll('.transform-arrow');
+            // Activate input
+            const inputCard = document.getElementById('input-card');
+            inputCard.classList.add('active', 'pulsing');
 
-            blocks.forEach(b => b.classList.remove('active'));
-            arrows.forEach(a => a.classList.remove('active'));
-
-            let delay = 0;
-            transformations.forEach((t, i) => {
-                if (!t.arrow) {
-                    setTimeout(() => {
-                        const block = document.getElementById(`block-${i}`);
-                        if (block) {
-                            block.classList.add('active');
-                            block.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
-                        }
-                    }, delay);
-                    delay += 800;
-                } else {
-                    setTimeout(() => {
-                        const arrow = document.getElementById(`arrow-${i}`);
-                        if (arrow) arrow.classList.add('active');
-                    }, delay - 400);
-                }
+            // Clear previous active states
+            document.querySelectorAll('.transform-step').forEach(el => {
+                el.classList.remove('active', 'pulsing');
             });
 
-            // Remove all active after completion
-            setTimeout(() => {
-                blocks.forEach(b => b.classList.remove('active'));
-                arrows.forEach(a => a.classList.remove('active'));
+            // Animate through steps
+            let delay = 500;
+            transformSteps.forEach((step, i) => {
+                setTimeout(() => {
+                    const el = document.getElementById(`step-${step.id}`);
+                    el.classList.add('active', 'pulsing');
 
-                // Highlight first and last
-                blocks[0]?.classList.add('active');
-                blocks[blocks.length - 1]?.classList.add('active');
-            }, delay + 1000);
+                    // Remove from previous
+                    if (i > 0) {
+                        const prev = document.getElementById(`step-${transformSteps[i-1].id}`);
+                        prev.classList.remove('pulsing');
+                    } else {
+                        inputCard.classList.remove('pulsing');
+                    }
+                }, delay);
+
+                delay += parseInt(step.time) * 5 + 300;
+            });
+
+            // Activate output at the end
+            setTimeout(() => {
+                transformSteps.forEach(step => {
+                    document.getElementById(`step-${step.id}`).classList.remove('pulsing');
+                });
+                const outputCard = document.getElementById('output-card');
+                outputCard.classList.add('active', 'pulsing');
+            }, delay);
         }
 
-        function showTooltip(event, index) {
-            const transform = transformations[index];
-            if (transform.arrow) return;
+        function showTooltip(event, stepId) {
+            const step = transformSteps.find(s => s.id === stepId);
+            if (!step) return;
 
             const tooltip = document.getElementById('tooltip');
-            const t = transform.tooltip;
+            const t = step.tooltip;
 
-            tooltip.className = `tooltip ${transform.color} show`;
+            tooltip.className = `tooltip ${step.color} show`;
             tooltip.innerHTML = `
                 <div class="tooltip-title">${t.title}</div>
                 <div class="tooltip-desc">${t.desc}</div>
@@ -694,13 +693,14 @@
 
         // Initialize
         window.addEventListener('load', () => {
-            renderFlow();
+            renderPipeline();
+            updateInputOutput();
             setTimeout(executeFlow, 1000);
         });
 
         // Update on input change
         ['fd', 'size'].forEach(id => {
-            document.getElementById(id).addEventListener('input', renderFlow);
+            document.getElementById(id).addEventListener('input', updateInputOutput);
         });
     </script>
 </body>
