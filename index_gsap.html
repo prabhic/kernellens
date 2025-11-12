@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kernel Lens - GSAP Enhanced</title>
+    <title>Kernel Lens - Cinematic Flow</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.4/gsap.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.4/MorphSVGPlugin.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -19,20 +18,108 @@
             color: #fff;
             overflow: hidden;
             height: 100vh;
+        }
+
+        /* Journey Mode - Cinematic Intro */
+        .journey-space {
+            position: fixed;
+            width: 100vw;
+            height: 100vh;
+            background: radial-gradient(ellipse at center, #0a0e27 0%, #000000 100%);
             display: flex;
             align-items: center;
             justify-content: center;
+            transition: opacity 1s;
+            z-index: 1000;
         }
 
-        .stage {
-            width: 90vw;
-            max-width: 1200px;
-            height: 80vh;
-            background: radial-gradient(ellipse at center, #0f1428 0%, #0a0e27 100%);
-            border-radius: 20px;
-            padding: 40px;
+        .journey-space.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .kernel-core {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: radial-gradient(circle, #667eea, #764ba2);
+            box-shadow: 0 0 40px rgba(102, 126, 234, 0.8);
+            cursor: pointer;
+            animation: kernel-pulse 2s ease-in-out infinite;
             position: relative;
-            overflow: hidden;
+        }
+
+        .kernel-core::after {
+            content: '';
+            position: absolute;
+            inset: -10px;
+            border-radius: 50%;
+            border: 2px solid rgba(102, 126, 234, 0.3);
+            animation: ring-expand 2s ease-out infinite;
+        }
+
+        @keyframes kernel-pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        @keyframes ring-expand {
+            0% { transform: scale(1); opacity: 1; }
+            100% { transform: scale(2); opacity: 0; }
+        }
+
+        .journey-prompt {
+            position: absolute;
+            bottom: 100px;
+            text-align: center;
+            opacity: 0;
+            animation: fade-in 1s ease-in 1s forwards;
+        }
+
+        @keyframes fade-in {
+            to { opacity: 1; }
+        }
+
+        .journey-prompt h2 {
+            font-size: 2em;
+            font-weight: 300;
+            margin-bottom: 15px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .journey-btn {
+            padding: 12px 30px;
+            background: rgba(102, 126, 234, 0.2);
+            border: 2px solid rgba(102, 126, 234, 0.5);
+            border-radius: 30px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            backdrop-filter: blur(10px);
+            margin: 10px;
+        }
+
+        .journey-btn:hover {
+            background: rgba(102, 126, 234, 0.4);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+        }
+
+        /* Main Visualization */
+        .stage {
+            width: 100vw;
+            height: 100vh;
+            background: radial-gradient(ellipse at center, #0f1428 0%, #0a0e27 100%);
+            position: relative;
+            opacity: 0;
+            transition: opacity 1s;
+        }
+
+        .stage.active {
+            opacity: 1;
         }
 
         .controls-top {
@@ -63,6 +150,22 @@
 
         .param input[type="range"] {
             width: 120px;
+            -webkit-appearance: none;
+            height: 4px;
+            border-radius: 2px;
+            background: rgba(102, 126, 234, 0.3);
+            outline: none;
+        }
+
+        .param input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(102, 126, 234, 0.5);
         }
 
         .param-value {
@@ -96,17 +199,28 @@
             stroke-width: 1;
             stroke-dasharray: 5,5;
             opacity: 0.3;
+            transition: opacity 0.3s;
+        }
+
+        .layer-zone.active {
+            opacity: 0.6;
         }
 
         .data-blob {
             filter: drop-shadow(0 0 20px currentColor);
+            transition: filter 0.3s;
         }
 
         .stage-label {
-            position: absolute;
             font-size: 0.8em;
             color: rgba(255,255,255,0.5);
             font-family: 'Courier New', monospace;
+            transition: all 0.3s;
+        }
+
+        .stage-label.active {
+            color: rgba(255,255,255,0.9);
+            font-weight: 700;
         }
 
         .live-indicator {
@@ -147,10 +261,16 @@
             padding: 20px;
             display: flex;
             justify-content: space-around;
+            backdrop-filter: blur(10px);
         }
 
         .metric {
             text-align: center;
+            transition: transform 0.3s;
+        }
+
+        .metric:hover {
+            transform: scale(1.1);
         }
 
         .metric-value {
@@ -164,10 +284,65 @@
             color: rgba(255,255,255,0.6);
             margin-top: 5px;
         }
+
+        /* Tooltip */
+        .tooltip {
+            position: fixed;
+            background: rgba(21, 26, 53, 0.95);
+            border: 2px solid currentColor;
+            border-radius: 10px;
+            padding: 12px 16px;
+            max-width: 300px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+        }
+
+        .tooltip.show {
+            opacity: 1;
+        }
+
+        .tooltip-title {
+            font-weight: 700;
+            margin-bottom: 6px;
+            font-size: 0.95em;
+        }
+
+        .tooltip-desc {
+            color: rgba(255,255,255,0.8);
+            font-size: 0.8em;
+            line-height: 1.4;
+            margin-bottom: 8px;
+        }
+
+        .tooltip-code {
+            background: rgba(0,0,0,0.5);
+            padding: 8px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.7em;
+            color: #43e97b;
+            white-space: pre;
+            line-height: 1.4;
+        }
     </style>
 </head>
 <body>
-    <div class="stage">
+    <!-- Journey Mode -->
+    <div class="journey-space" id="journey-space">
+        <div class="kernel-core" onclick="enterKernel()"></div>
+        <div class="journey-prompt">
+            <h2>The Linux Kernel</h2>
+            <p style="color: rgba(255,255,255,0.7); margin-bottom: 20px;">A living system, processing millions of operations per second</p>
+            <button class="journey-btn" onclick="enterKernel()">Journey Inside</button>
+            <button class="journey-btn" onclick="skipToVisualization()">Direct View</button>
+        </div>
+    </div>
+
+    <!-- Main Visualization -->
+    <div class="stage" id="main-stage">
         <div class="live-indicator">
             <div class="pulse-dot"></div>
             LIVE MODE
@@ -194,27 +369,45 @@
         <canvas id="canvas-particles"></canvas>
 
         <svg id="svg-morph" viewBox="0 0 600 500">
-            <!-- Layer zones -->
-            <rect class="layer-zone" x="50" y="50" width="500" height="60" style="color: #f093fb"/>
-            <rect class="layer-zone" x="50" y="120" width="500" height="60" style="color: #4facfe"/>
-            <rect class="layer-zone" x="50" y="190" width="500" height="60" style="color: #43e97b"/>
-            <rect class="layer-zone" x="50" y="260" width="500" height="60" style="color: #fa709a"/>
-            <rect class="layer-zone" x="50" y="330" width="500" height="60" style="color: #fee140"/>
-            <rect class="layer-zone" x="50" y="400" width="500" height="60" style="color: #30cfd0"/>
+            <!-- Layer zones (clickable for tooltips) -->
+            <g id="layer-user" onmouseenter="showLayerTooltip(event, 0)" onmouseleave="hideTooltip()">
+                <rect class="layer-zone" x="50" y="50" width="500" height="60" style="color: #f093fb"/>
+                <text x="60" y="75" class="stage-label" fill="#f093fb">USER SPACE</text>
+            </g>
 
-            <text x="60" y="75" class="stage-label" fill="#f093fb">USER SPACE</text>
-            <text x="60" y="145" class="stage-label" fill="#4facfe">SYSCALL</text>
-            <text x="60" y="215" class="stage-label" fill="#43e97b">VFS</text>
-            <text x="60" y="285" class="stage-label" fill="#fa709a">FILESYSTEM</text>
-            <text x="60" y="355" class="stage-label" fill="#fee140">BLOCK I/O</text>
-            <text x="60" y="425" class="stage-label" fill="#30cfd0">DEVICE</text>
+            <g id="layer-syscall" onmouseenter="showLayerTooltip(event, 1)" onmouseleave="hideTooltip()">
+                <rect class="layer-zone" x="50" y="120" width="500" height="60" style="color: #4facfe"/>
+                <text x="60" y="145" class="stage-label" fill="#4facfe">SYSCALL</text>
+            </g>
+
+            <g id="layer-vfs" onmouseenter="showLayerTooltip(event, 2)" onmouseleave="hideTooltip()">
+                <rect class="layer-zone" x="50" y="190" width="500" height="60" style="color: #43e97b"/>
+                <text x="60" y="215" class="stage-label" fill="#43e97b">VFS</text>
+            </g>
+
+            <g id="layer-fs" onmouseenter="showLayerTooltip(event, 3)" onmouseleave="hideTooltip()">
+                <rect class="layer-zone" x="50" y="260" width="500" height="60" style="color: #fa709a"/>
+                <text x="60" y="285" class="stage-label" fill="#fa709a">FILESYSTEM</text>
+            </g>
+
+            <g id="layer-block" onmouseenter="showLayerTooltip(event, 4)" onmouseleave="hideTooltip()">
+                <rect class="layer-zone" x="50" y="330" width="500" height="60" style="color: #fee140"/>
+                <text x="60" y="355" class="stage-label" fill="#fee140">BLOCK I/O</text>
+            </g>
+
+            <g id="layer-device" onmouseenter="showLayerTooltip(event, 5)" onmouseleave="hideTooltip()">
+                <rect class="layer-zone" x="50" y="400" width="500" height="60" style="color: #30cfd0"/>
+                <text x="60" y="425" class="stage-label" fill="#30cfd0">DEVICE</text>
+            </g>
 
             <!-- Morphing data blob -->
             <g id="morph-container">
-                <path id="data-shape" class="data-blob" fill="#f093fb" d="M 280,80 m -20,0 a 20,20 0 1,0 40,0 a 20,20 0 1,0 -40,0">
+                <path id="data-shape" class="data-blob" fill="#f093fb"
+                      d="M 280,80 m -20,0 a 20,20 0 1,0 40,0 a 20,20 0 1,0 -40,0">
                 </path>
 
-                <text id="data-label" x="300" y="85" text-anchor="middle" font-size="12" font-weight="bold" fill="#0a0e27">
+                <text id="data-label" x="300" y="85" text-anchor="middle"
+                      font-size="12" font-weight="bold" fill="#0a0e27">
                     fd=3
                 </text>
             </g>
@@ -240,213 +433,9 @@
         </div>
     </div>
 
-    <script>
-        // ====================
-        // STATE & CONFIGURATION
-        // ====================
-        const state = {
-            fd: 3,
-            size: 4096,
-            cacheHit: 85,
-            currentLayer: 0
-        };
+    <!-- Tooltip -->
+    <div class="tooltip" id="tooltip"></div>
 
-        const shapes = {
-            circle: "M 280,80 m -20,0 a 20,20 0 1,0 40,0 a 20,20 0 1,0 -40,0",
-            bars: "M 260,135 L 340,135 L 340,150 L 260,150 Z M 260,155 L 340,155 L 340,170 L 260,170 Z M 260,175 L 340,175 L 340,190 L 260,190 Z",
-            tree: "M 250,200 L 350,200 L 350,250 L 250,250 Z M 255,210 L 265,210 L 265,220 L 255,220 Z M 255,230 L 345,230 L 345,240 L 255,240 Z",
-            grid: "M 265,270 L 285,270 L 285,290 L 265,290 Z M 295,270 L 315,270 L 315,290 L 295,290 Z M 265,300 L 285,300 L 285,320 L 265,320 Z M 295,300 L 315,300 L 315,320 L 295,320 Z",
-            queue: "M 240,340 L 360,340 L 360,380 L 240,380 Z M 250,350 L 270,350 L 270,370 L 250,370 Z M 280,350 L 300,350 L 300,370 L 280,370 Z M 310,350 L 330,350 L 330,370 L 310,370 Z",
-            device: "M 250,410 L 350,410 L 350,450 L 250,450 Z M 270,420 L 280,420 L 280,430 L 270,430 Z M 320,420 L 330,420 L 330,430 L 320,430 Z"
-        };
-
-        const layers = [
-            { shape: 'circle', color: '#f093fb', y: 80, label: 'fd=3' },
-            { shape: 'bars', color: '#4facfe', y: 150, label: 'Registers' },
-            { shape: 'tree', color: '#43e97b', y: 215, label: 'file*' },
-            { shape: 'grid', color: '#fa709a', y: 285, label: 'Blocks' },
-            { shape: 'queue', color: '#fee140', y: 355, label: 'Queue' },
-            { shape: 'device', color: '#30cfd0', y: 425, label: 'Device' }
-        ];
-
-        // ====================
-        // CANVAS PARTICLE SYSTEM
-        // ====================
-        const canvas = document.getElementById('canvas-particles');
-        const ctx = canvas.getContext('2d');
-        canvas.width = canvas.offsetWidth;
-        canvas.height = canvas.offsetHeight;
-
-        const particles = [];
-
-        class Particle {
-            constructor(x, y, targetY, color) {
-                this.x = x;
-                this.y = y;
-                this.targetY = targetY;
-                this.vx = (Math.random() - 0.5) * 2;
-                this.vy = 0;
-                this.color = color;
-                this.life = 1.0;
-            }
-
-            update() {
-                // Spring physics
-                const dy = this.targetY - this.y;
-                this.vy += dy * 0.05;
-                this.vy *= 0.92;
-
-                this.y += this.vy;
-                this.x += this.vx;
-                this.vx *= 0.98;
-
-                if (Math.abs(dy) < 30) {
-                    this.life -= 0.02;
-                }
-
-                return this.life > 0;
-            }
-
-            draw() {
-                ctx.fillStyle = this.color;
-                ctx.globalAlpha = this.life * 0.6;
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, 2, 0, Math.PI * 2);
-                ctx.fill();
-            }
-        }
-
-        function emitParticles(count, fromY, toY, color) {
-            for (let i = 0; i < count; i++) {
-                particles.push(new Particle(
-                    canvas.width / 2 + (Math.random() - 0.5) * 100,
-                    fromY,
-                    toY,
-                    color
-                ));
-            }
-        }
-
-        function animateParticles() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-            for (let i = particles.length - 1; i >= 0; i--) {
-                if (!particles[i].update()) {
-                    particles.splice(i, 1);
-                } else {
-                    particles[i].draw();
-                }
-            }
-
-            ctx.globalAlpha = 1.0;
-            requestAnimationFrame(animateParticles);
-        }
-
-        animateParticles();
-
-        // ====================
-        // GSAP MORPHING ANIMATION
-        // ====================
-        let morphTimeline;
-
-        function createMorphingFlow() {
-            if (morphTimeline) {
-                morphTimeline.kill();
-            }
-
-            morphTimeline = gsap.timeline({ repeat: -1, repeatDelay: 1 });
-
-            layers.forEach((layer, i) => {
-                if (i === 0) return;
-
-                const duration = 1.5;
-                const prevLayer = layers[i - 1];
-
-                morphTimeline.to('#data-shape', {
-                    attr: { d: shapes[layer.shape] },
-                    fill: layer.color,
-                    duration: duration,
-                    ease: "elastic.out(1, 0.5)" // Spring easing!
-                }, i * 2);
-
-                morphTimeline.to('#data-label', {
-                    textContent: layer.label,
-                    duration: 0.3,
-                    ease: "power2.out"
-                }, i * 2);
-
-                morphTimeline.to('#data-label', {
-                    attr: { y: layer.y + 5 },
-                    duration: duration,
-                    ease: "elastic.out(1, 0.5)"
-                }, i * 2);
-
-                // Emit particles during transition
-                morphTimeline.call(() => {
-                    emitParticles(30, prevLayer.y, layer.y, layer.color);
-                }, null, i * 2);
-            });
-        }
-
-        createMorphingFlow();
-
-        // ====================
-        // LIVE PARAMETER UPDATES
-        // ====================
-        function updateMetrics() {
-            const ioOps = Math.ceil((100 - state.cacheHit) / 100 * Math.ceil(state.size / 4096));
-            const totalTime = 1 + 0.5 + 2 + (ioOps * 10) + (ioOps * 150);
-
-            // Animate metrics with GSAP
-            gsap.to('#time-metric', {
-                textContent: totalTime.toFixed(1) + 'μs',
-                duration: 0.5,
-                snap: { textContent: 0.1 }
-            });
-
-            gsap.to('#cache-metric', {
-                textContent: state.cacheHit + '%',
-                duration: 0.5
-            });
-
-            gsap.to('#io-metric', {
-                textContent: ioOps,
-                duration: 0.5,
-                snap: { textContent: 1 }
-            });
-
-            gsap.to('#transfer-metric', {
-                textContent: Math.ceil(state.size / 1024) + 'KB',
-                duration: 0.5
-            });
-        }
-
-        document.getElementById('fd-input').addEventListener('input', (e) => {
-            state.fd = parseInt(e.target.value);
-            document.getElementById('fd-display').textContent = `fd=${state.fd}`;
-            layers[0].label = `fd=${state.fd}`;
-            updateMetrics();
-        });
-
-        document.getElementById('size-input').addEventListener('input', (e) => {
-            state.size = parseInt(e.target.value);
-            document.getElementById('size-display').textContent = `${state.size}B`;
-            updateMetrics();
-        });
-
-        document.getElementById('cache-input').addEventListener('input', (e) => {
-            state.cacheHit = parseInt(e.target.value);
-            document.getElementById('cache-display').textContent = `${state.cacheHit}%`;
-            updateMetrics();
-        });
-
-        updateMetrics();
-
-        // Handle resize
-        window.addEventListener('resize', () => {
-            canvas.width = canvas.offsetWidth;
-            canvas.height = canvas.offsetHeight;
-        });
-    </script>
+    <script src="kernel-lens.js"></script>
 </body>
 </html>
