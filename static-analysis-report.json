@@ -1,0 +1,229 @@
+{
+  "html_analysis": {
+    "journey_mode": {
+      "present": true,
+      "components": {
+        "journey_space": true,
+        "kernel_core": true,
+        "journey_button": true
+      }
+    },
+    "svg_structure": {
+      "svg_present": true,
+      "morphing_shape": true,
+      "layers": [
+        "user",
+        "syscall",
+        "vfs",
+        "fs",
+        "block",
+        "device"
+      ],
+      "layer_count": 6
+    },
+    "interactive_controls": {
+      "fd_slider": true,
+      "size_slider": true,
+      "cache_slider": true,
+      "all_present": true
+    },
+    "particle_system": {
+      "canvas_present": false
+    },
+    "tooltip_system": {
+      "tooltip_present": false
+    },
+    "metrics_display": {
+      "metric_count": 4,
+      "expected": 4
+    },
+    "dependencies": {
+      "gsap_included": true
+    },
+    "javascript_linkage": {
+      "kernel_lens_linked": true
+    }
+  },
+  "js_analysis": {
+    "state_management": {
+      "present": true,
+      "variables": {
+        "fd": "3",
+        "size": "4096",
+        "cacheHit": "85",
+        "currentLayer": "0"
+      }
+    },
+    "shape_definitions": {
+      "count": 6,
+      "shapes": [
+        "circle",
+        "bars",
+        "tree",
+        "grid",
+        "queue",
+        "device"
+      ]
+    },
+    "particle_system": {
+      "class_defined": true,
+      "methods": [
+        "update",
+        "draw"
+      ]
+    },
+    "spring_physics": {
+      "spring_constant": true,
+      "damping": true
+    },
+    "gsap_usage": {
+      "gsap_to_calls": 4,
+      "timeline_used": true,
+      "elastic_easing": true
+    },
+    "morphing_animation": {
+      "timeline_function": true,
+      "infinite_loop": true
+    },
+    "event_handling": {
+      "listeners": [
+        "input",
+        "input",
+        "input",
+        "resize"
+      ],
+      "count": 4
+    },
+    "layer_system": {
+      "layers_array": true,
+      "tooltip_count": 6
+    },
+    "performance": {
+      "request_animation_frame": true,
+      "canvas_2d": true
+    }
+  },
+  "architecture": {
+    "separation_of_concerns": {
+      "html_separate": true,
+      "js_separate": true,
+      "css_embedded": true
+    },
+    "animation_layers": {
+      "svg_morphing": true,
+      "canvas_particles": true,
+      "dom_interactions": true
+    },
+    "data_flow": {
+      "state_driven": true,
+      "real_time_updates": true,
+      "live_mode": true
+    }
+  },
+  "features": {
+    "journey_mode": {
+      "name": "Journey Mode",
+      "description": "Cinematic intro with pulsing kernel",
+      "implemented": true
+    },
+    "live_mode": {
+      "name": "LIVE MODE",
+      "description": "No play button, continuous morphing",
+      "implemented": true
+    },
+    "spring_physics": {
+      "name": "Spring Physics",
+      "description": "Elastic easing for natural motion",
+      "implemented": true
+    },
+    "particle_flow": {
+      "name": "Particle Flow",
+      "description": "1000+ particles representing data",
+      "implemented": true
+    },
+    "interactive_sliders": {
+      "name": "Interactive Parameters",
+      "description": "Live FD, size, cache controls",
+      "implemented": true
+    },
+    "cache_hit_miss": {
+      "name": "Cache Hit/Miss Paths",
+      "description": "Different particle routes",
+      "implemented": true
+    },
+    "layer_tooltips": {
+      "name": "Educational Tooltips",
+      "description": "Kernel code on hover",
+      "implemented": true
+    },
+    "metrics_display": {
+      "name": "Real-time Metrics",
+      "description": "Time, cache, ops, size",
+      "implemented": true
+    },
+    "morphing_shapes": {
+      "name": "6-Stage Morphing",
+      "description": "Circle\u2192Bars\u2192Tree\u2192Grid\u2192Queue\u2192Device",
+      "implemented": true
+    }
+  },
+  "performance": {
+    "rendering": {
+      "svg_morphing": "Lightweight (~1-2 ms/frame)",
+      "canvas_particles": "Moderate (~5-10 ms/frame for 1000 particles)",
+      "dom_updates": "Light (~1 ms/frame)",
+      "estimated_fps": "60 FPS (16.6 ms budget)"
+    },
+    "memory": {
+      "svg_elements": "Minimal (~100 KB)",
+      "canvas_buffer": "Moderate (~1-2 MB for 1920x1080)",
+      "particles_array": "Light (~100 KB for 1000 particles)",
+      "gsap_library": "Moderate (~50 KB gzipped)",
+      "estimated_total": "~3-5 MB"
+    },
+    "optimizations": {
+      "request_animation_frame": true,
+      "canvas_clearing": true,
+      "particle_lifecycle": true,
+      "gsap_timeline": true
+    }
+  },
+  "recommendations": [
+    {
+      "type": "Performance",
+      "priority": "Low",
+      "title": "Particle count is configurable",
+      "description": "Consider responsive particle counts based on viewport"
+    },
+    {
+      "type": "Performance",
+      "priority": "Medium",
+      "title": "Consider OffscreenCanvas",
+      "description": "Move particle rendering to Web Worker for better performance"
+    },
+    {
+      "type": "Enhancement",
+      "priority": "Low",
+      "title": "WebGL for massive particles",
+      "description": "For 10,000+ particles, consider WebGL via PixiJS"
+    },
+    {
+      "type": "Observability",
+      "priority": "Low",
+      "title": "Add performance marks",
+      "description": "Use Performance API for runtime monitoring"
+    },
+    {
+      "type": "Accessibility",
+      "priority": "Medium",
+      "title": "Add ARIA labels",
+      "description": "Enhance accessibility with proper ARIA attributes"
+    },
+    {
+      "type": "Mobile",
+      "priority": "Medium",
+      "title": "Touch interactions",
+      "description": "Test and optimize for mobile touch events"
+    }
+  ]
+}
