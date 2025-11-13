@@ -436,6 +436,30 @@
     <!-- Tooltip -->
     <div class="tooltip" id="tooltip"></div>
 
-    <script src="kernel-lens.js"></script>
+    <script type="module">
+        import { KernelVisualizer, enterKernel, skipToVisualization, showLayerTooltip, hideTooltip } from './src/kernel-visualizer.js';
+        import { layers } from './src/syscalls/read-config.js';
+
+        // Initialize visualizer
+        const visualizer = new KernelVisualizer('main-stage', {
+            difficulty: 'developer',
+            fd: 3,
+            size: 4096,
+            cacheHit: 85
+        });
+
+        // Expose functions globally for onclick handlers
+        window.enterKernel = enterKernel;
+        window.skipToVisualization = skipToVisualization;
+        window.hideTooltip = hideTooltip;
+
+        // Wrap showLayerTooltip to pass layers array
+        window.showLayerTooltip = (event, layerIndex) => {
+            showLayerTooltip(event, layers, layerIndex);
+        };
+
+        // Expose visualizer for debugging
+        window.visualizer = visualizer;
+    </script>
 </body>
 </html>
