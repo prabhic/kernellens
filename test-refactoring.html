@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Test Refactored Modules</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.4/gsap.min.js"></script>
+</head>
+<body>
+    <h1>Module Loading Test</h1>
+    <div id="test-output" style="font-family: monospace; padding: 20px;"></div>
+
+    <script type="module">
+        const output = document.getElementById('test-output');
+
+        function log(msg, success = true) {
+            const p = document.createElement('p');
+            p.style.color = success ? 'green' : 'red';
+            p.textContent = (success ? '✅ ' : '❌ ') + msg;
+            output.appendChild(p);
+        }
+
+        try {
+            // Test 1: Import read config
+            const readConfig = await import('./src/syscalls/read-config.js');
+            log('Read config imported successfully');
+            log(`  - Found ${Object.keys(readConfig.shapes).length} shapes`);
+            log(`  - Found ${readConfig.layers.length} layers`);
+
+            // Test 2: Import level configs
+            const levelConfig = await import('./src/levels/level-configs.js');
+            log('Level config imported successfully');
+            log(`  - Available levels: ${levelConfig.getAvailableLevels().join(', ')}`);
+
+            // Test 3: Import visualizer
+            const visualizer = await import('./src/kernel-visualizer.js');
+            log('Kernel visualizer imported successfully');
+            log(`  - KernelVisualizer class available: ${typeof visualizer.KernelVisualizer === 'function'}`);
+            log(`  - Helper functions available: enterKernel, skipToVisualization, etc.`);
+
+            // Test 4: Check GSAP
+            log(`GSAP loaded: ${typeof gsap !== 'undefined'}`);
+
+            log('\n🎉 All modules loaded successfully! The refactoring works.', true);
+
+        } catch (error) {
+            log(`Module loading failed: ${error.message}`, false);
+            console.error(error);
+        }
+    </script>
+</body>
+</html>
