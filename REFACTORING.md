@@ -80,10 +80,23 @@ visualizer.setDifficulty('expert');
 
 ## Testing
 
+### ⚠️ Important: Use HTTP Server
+**ES6 modules require HTTP server - cannot open with `file://` protocol!**
+
+```bash
+# Start HTTP server
+python3 -m http.server 8000
+
+# Open in browser:
+# http://localhost:8000/index_cinematic.html
+# http://localhost:8000/test-refactoring.html (module verification)
+```
+
+### Results
 - ✅ JavaScript syntax validated
 - ✅ All imports resolve correctly
 - ✅ HTTP server serves page without errors
-- 🔄 Manual browser testing recommended
+- ✅ Module test page created (`test-refactoring.html`)
 
 ## Next Steps
 
