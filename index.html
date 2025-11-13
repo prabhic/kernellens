@@ -52,9 +52,12 @@
 
         .views-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-            gap: 30px;
+            grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+            gap: 40px;
             margin-bottom: 40px;
+            max-width: 900px;
+            margin-left: auto;
+            margin-right: auto;
         }
 
         .view-card {
@@ -100,11 +103,6 @@
         .view-card.user-overview .view-icon {
             background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
             box-shadow: 0 10px 30px rgba(79, 172, 254, 0.4);
-        }
-
-        .view-card.gsap .view-icon {
-            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
-            box-shadow: 0 10px 30px rgba(67, 233, 123, 0.4);
         }
 
         .view-title {
@@ -189,10 +187,6 @@
         .view-card:nth-child(2) .view-icon {
             animation-delay: 0.5s;
         }
-
-        .view-card:nth-child(3) .view-icon {
-            animation-delay: 1s;
-        }
     </style>
 </head>
 <body>
@@ -235,28 +229,12 @@
                 </ul>
                 <span class="view-badge">Data-Centric</span>
             </a>
-
-            <a href="index_gsap.html" class="view-card gsap">
-                <div class="view-icon">⚡</div>
-                <div class="view-title">GSAP Enhanced</div>
-                <div class="view-description">
-                    Advanced GSAP-powered visualization with sophisticated animations and effects
-                </div>
-                <ul class="view-features">
-                    <li>High-performance animations</li>
-                    <li>Smooth transitions</li>
-                    <li>Interactive particles</li>
-                    <li>Advanced morphing</li>
-                    <li>Professional effects</li>
-                </ul>
-                <span class="view-badge">Advanced</span>
-            </a>
         </div>
 
         <div class="footer">
             <p>
                 🔬 Built to visualize and understand Linux kernel execution patterns<br>
-                📊 Each view offers unique insights into kernel operations
+                📊 Two distinct views offering unique insights into kernel operations
             </p>
         </div>
     </div>
