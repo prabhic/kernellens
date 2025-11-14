@@ -1,0 +1,53 @@
+---
+name: Cleanup Branches
+
+'on':
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Perform a dry run (do not delete branches)'
+        required: false
+        default: 'false'
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Fetch all branches
+        run: |
+          git fetch --all
+
+      - name: List branches to be deleted
+        id: list_branches
+        run: |
+          echo "Branches that will be deleted:"
+          git branch -r | grep -v "main" | \
+            grep -v "HEAD" | sed 's/origin\///'
+
+      - name: Delete remote branches
+        if: ${{ github.event.inputs.dry_run != 'true' }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Deleting all branches except main..."
+
+          # Get all remote branches except main and HEAD
+          branches=$(git branch -r | grep -v "main" | \
+            grep -v "HEAD" | sed 's/origin\///' | tr -d ' ')
+
+          # Delete each branch
+          for branch in $branches; do
+            echo "Deleting branch: $branch"
+            git push origin --delete "$branch" || \
+              echo "Failed to delete $branch or already deleted"
+          done
+
+          echo "Branch cleanup complete!"
